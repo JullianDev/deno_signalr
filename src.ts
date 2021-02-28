@@ -44,7 +44,7 @@ export interface SignalRConnection {
 }
 /**
  * A SignalR client for Deno which supports ASP.net
- * Forked from node-signalr https://github.com/alex8088/node-signalr
+ * Based on node-signalr https://github.com/alex8088/node-signalr
  */
 class SignalR {
     /**
