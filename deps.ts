@@ -1,1 +1,0 @@
-export { WebSocket } from "https://deno.land/x/websocket@v0.0.5/mod.ts";
