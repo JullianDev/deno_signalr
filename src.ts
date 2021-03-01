@@ -1,3 +1,6 @@
+import { Evt, to } from "./deps.ts";
+export { to };
+
 /**
  * SignalR connection state
  */
@@ -111,6 +114,12 @@ export interface SignalRConnection {
      * @memberof SignalRConnection
      */
     token?: string,
+    /**
+     * The connection id
+     * @type {string}
+     * @memberof SignalRConnection
+     */
+    id?: string
 }
 /**
  * SignalR message
@@ -130,7 +139,7 @@ export interface SignalRMessage {
      */
     M?: string,
     /**
-     * 
+     * Messaga arguments
      * @type {string?}
      * @memberof SignalRMessage
      */
@@ -148,19 +157,19 @@ export interface SignalRHubMessageData {
      */
     M?: SignalRMessage[],
     /**
-     * 
-     * @type {string}
+     * Invocation ID
+     * @type {number}
      * @memberof SignalRHubMessageData
      */
-    I?: string,
+    I?: number,
     /**
-     * 
+     * Message error
      * @type {string}
      * @memberof SignalRHubMessageData
      */
     E?: string,
     /**
-     * 
+     * Message result
      * @type {string}
      * @memberof SignalRHubMessageData
      */
@@ -187,7 +196,12 @@ export interface SignalRHubMessage {
 /**
  * A SignalR client for Deno which supports ASP.net
  */
-export class SignalR {
+export class SignalR extends Evt<
+    [ "connected" ] |
+    [ "disconnected", string ] |
+    [ "reconnecting", number ] |
+    [ "error", SignalRErrorCode, unknown?]> 
+    {
     /**
      * The URL to connect to
      * @type {string?}
@@ -242,19 +256,19 @@ export class SignalR {
      * @private
      * @type {string[]?}
      */
-    private _hubNames?: string[];
+    private _hubNames?: string[] | Record<string, unknown>[];
     /**
-     * The inovcation ID
+     * The inovcation ID - public for SignalRHub to use
+     * @public
+     * @type {number}
+     */
+    public _invocationId = 0;
+    /**
+     * Call timeout in milliseconds - public for SignalRHub to use
      * @private
      * @type {number}
      */
-    private _invocationId = 0;
-    /**
-     * Call timeout in milliseconds
-     * @private
-     * @type {number}
-     */
-    private _callTimeout = 0;
+    public _callTimeout = 0;
     /**
      * The timtout to keep alive in milliseconds
      * @private
@@ -295,6 +309,7 @@ export class SignalR {
      * @param {string[]} hubs - Hubs to connect to
      */
     constructor(url: string, hubs: string[]) {
+      super();
       this.url = url;
       this.connection = {
           state: SignalRConnectionState.disconnected,
@@ -302,13 +317,6 @@ export class SignalR {
           lastMessageAt: new Date().getTime()
       };
       this._hubNames = hubs;
-  }
-  /**
-   * Mark the last message time as current time
-   * @private
-   */
-  private _markLastMessage(): void {
-      if (this.connection) this.connection.lastMessageAt = new Date().getTime();
   }
   /**
    * Proccess a message
@@ -321,10 +329,11 @@ export class SignalR {
         const data: SignalRHubMessageData = JSON.parse(message.data);
         if (data.M) {
             data.M.forEach((message: SignalRMessage) => {
-                if (this.connection) {
+                if (this.connection && message.H) {
                     const hub = message.H;
                     const handler = this.connection.hub.handlers[hub];
-                    if (handler) {
+                    if (handler && message.M) {
+                        // @ts-ignore: Handlers should always be records unless modified code
                         const method = handler[message.M];
                         if (method) method.apply(this, message.A);
                     }
@@ -336,13 +345,13 @@ export class SignalR {
     }
   }
   /**
-   * Send a message to a hub
-   * @private
+   * Send a message to a hub - public for SignalRHub to use
+   * @public
    * @param {string} hub - The message hub to send a message to 
    * @param {string} method = THe method to send with the data
    * @param {unknown} args - Args to send
    */
-  private _sendMessage(hub: string, method: string, args: unknown): void {
+  public _sendMessage(hub: string, method: string, args: unknown): void {
       const payload = JSON.stringify({
          H: hub,
          M: method,
@@ -351,9 +360,7 @@ export class SignalR {
       });
       this._invocationId++;
       if (this._websocket && (this._websocket.readyState === this._websocket.OPEN)) 
-        this._websocket.send(payload, (error: Error) =>
-            console.log(error)
-        )
+        this._websocket.send(payload);
   }
   /**
    * Negotitate with the endpoint for a connection token
@@ -369,7 +376,7 @@ export class SignalR {
 
       query.set("connectionData", JSON.stringify(this._hubNames));
       query.set("clientProtocol", String(protocol));
-      const url = `${this.url}?${query.toString()}`;
+      const url = `${this.url}/negotiate?${query.toString()}`;
       return new Promise((resolve, reject) => {
         fetch(url, {
             method: "GET",
@@ -392,16 +399,15 @@ export class SignalR {
       });
   }
   /**
-   * 
+   * Connect to the websocket
+   * @private
    * @param {number} [protocol=1.5] - The SignalR client protocol
    */
-  private _connect(protocol = 1.5) {
+  private _connect(protocol = 1.5): void {
       if (this.url && this.connection) {
           const url = this.url.replace(/^http/, "ws");
           const query = new URLSearchParams();
           for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
-          const headers = new Headers();
-          for (const [key, value] of Object.entries(this.headers)) headers.append(key, String(value));
     
           query.set("connectionData", JSON.stringify(this._hubNames));
           query.set("clientProtocol", String(protocol));
@@ -409,12 +415,320 @@ export class SignalR {
           query.set("connectionToken", String(this.connection.token));
           query.set("tid", "10");
           const webSocket = new WebSocket(`${url}/connect?${query}`);
+          webSocket.onopen = (event: Event) => {
+              this._invocationId = 0;
+              this._callTimeout = 0;
+              this._start().then(() => {
+                  this._reconnectCount = 0;
+                  this.post(["connected"]);
+                  if (this.connection) this.connection.state = SignalRConnectionState.connected;
+                  this._markLastMessage();
+                  if (this._keepAlive) this._beat();
+              }).catch((error: SignalRError) => {
+                if (this.connection) this.connection.state = SignalRConnectionState.disconnected;
+                this._error(error.code, error.message);
+              });
+          }
+          webSocket.onerror = (event: Event | ErrorEvent) => {
+              if ("error" in event) this._error(SignalRErrorCode.socketError, event.error);
+          }
+          webSocket.onmessage = (message: SignalRHubMessage) => {
+              this._receiveMessage(message);
+          }
+          webSocket.onclose = (event: CloseEvent) => {
+            this._callTimeout = 1000;
+            if (this.connection) this.connection.state = SignalRConnectionState.disconnected;
+            this.post(["disconnected", "failed"]);
+            this._reconnect();
+          }
+          this._websocket = webSocket;
       }
   }
+  /**
+   * Attempt a reconnection to the websocket
+   * @private
+   * @param {boolean} [restart=false] - Whether or not it should restart
+   */
+  private _reconnect(restart = false): void {
+      if (this._reconnectTimer || (this.connection && this.connection.state === SignalRConnectionState.reconnecting)) return;
+      this._clearBeatTimer();
+      this._close();
+      this._reconnectTimer = setTimeout(() => {
+        this._reconnectCount++
+        if (this.connection) this.connection.state = SignalRConnectionState.reconnecting;
+        this.post(["reconnecting", this._reconnectCount]);
+        restart ? this.start() : this._connect();
+        this._reconnectTimer = undefined;
+      }, this.reconnectDelayTime || 5000);
+  }
+  /**
+   * Clear the current reconnect timer if it exists
+   * @private
+   */
+  private _clearReconnectTimer(): void {
+    if (this._reconnectTimer) {
+        clearTimeout(this._reconnectTimer);
+        this._reconnectTimer = undefined;
+    }
+  }
+  /**
+   * Watch time elapsed since last message
+   * @private
+   */
+  private _beat(): void {
+      if (this.connection) {
+        const timeElapsed = new Date().getTime() - this.connection.lastMessageAt;
+        if (timeElapsed > this._keepAliveTimeout) {
+            this.connection.state = SignalRConnectionState.disconnected;
+            this._error(SignalRErrorCode.connectLost)
+        } else {
+            this._beatTimer = setTimeout(() => {
+                this._beat()
+            }, this._beatInterval);
+        }
+    }
+  }
+  private _clearBeatTimer(): void {
+    if (this._beatTimer) {
+      clearTimeout(this._beatTimer);
+      this._beatTimer = undefined;
+    }
+  }
+  /**
+   * Mark the last message time as current time
+   * @private
+   */
+  private _markLastMessage(): void {
+    if (this.connection) this.connection.lastMessageAt = new Date().getTime();
+  }
+  /**
+   * Start the SignalR connection
+   * @private
+   * @param {number} [protocol=1.5] - The SignalR client protocol
+   * @returns {Promise<Record<string, unknown>>}
+   */
+  private _start(protocol = 1.5): Promise<unknown> {
+      if (this.url && this.connection) {
+          const query = new URLSearchParams();
+          for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
+          const headers = new Headers();
+          for (const [key, value] of Object.entries(this.headers)) headers.append(key, String(value));
+
+          query.set("connectionData", JSON.stringify(this._hubNames));
+          query.set("clientProtocol", String(protocol));
+          query.set("transport", "webSockets");
+          query.set("connectionToken", String(this.connection.token));
+          const url = `${this.url}/start?${query.toString()}`;
+          return new Promise((resolve, reject) => {
+            fetch(url, {
+                method: "GET",
+                headers: headers
+            }).catch((error: Error) =>
+                reject({ code: SignalRErrorCode.startError, message: error })
+            ).then(async (data: Response | void) => {
+                if (data) {
+                    if (data.ok) {
+                        resolve(await data.json())
+                    } else if (data.status === 302 || data.status === 401 || data.status === 403) {
+                        reject({ code: SignalRErrorCode.unauthorized, message: null });
+                    } else {
+                        reject({ code: SignalRErrorCode.startError, message: data.status })
+                    }
+                }
+            });
+          });
+      } else throw new Error(`A connection has not yet been established.`);
+  }
+  /**
+   * Abort the SignalR connection
+   * @private
+   * @param {number} [protocol=1.5] - The SignalR client protocol
+   * @returns {Promise<Record<void>>}
+   */
+  private _abort(protocol = 1.5): Promise<void> {
+    if (this.url && this.connection) {
+        const query = new URLSearchParams();
+        for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
+        const headers = new Headers();
+        for (const [key, value] of Object.entries(this.headers)) headers.append(key, String(value));
+
+        query.set("connectionData", JSON.stringify(this._hubNames));
+        query.set("clientProtocol", String(protocol));
+        query.set("transport", "webSockets");
+        query.set("connectionToken", String(this.connection.token));
+        const url = `${this.url}/abort?${query.toString()}`;
+        return new Promise((resolve, reject) => {
+          fetch(url, {
+              method: "POST",
+              headers: headers
+          }).catch((error: Error) =>
+              reject({ code: SignalRErrorCode.abortError, message: error })
+          ).then((data: Response | void) => {
+              if (data) {
+                  if (data.ok) {
+                      resolve()
+                  } else if (data.status === 302 || data.status === 401 || data.status === 403) {
+                      reject({ code: SignalRErrorCode.unauthorized, message: null });
+                  } else {
+                      reject({ code: SignalRErrorCode.abortError, message: data.status })
+                  }
+              }
+          });
+        });
+    } else throw new Error(`A connection has not yet been established.`);
+  }
+  /**
+   * Emit an error and attempt a reconnect
+   * @param {SignalRErrorCode} code - SignalRError code to emit
+   * @param {unknown?} extra = Extra data to emit
+   */
+  private _error(code: SignalRErrorCode, extra?: unknown): void {
+      this.post(["error", code, extra]);
+      if (code === SignalRErrorCode.negotiateError || code === SignalRErrorCode.connectError) {
+          this._reconnect(true);
+      } else if (code === SignalRErrorCode.startError || code === SignalRErrorCode.connectLost) {
+          this._reconnect();
+      }
+  }
+  /**
+   * Close the SignalR instance
+   * @private
+   */
+  private _close(): void {
+      if (this._websocket) {
+        this._websocket.onclose = () => {};
+        this._websocket.onmessage = () => {};
+        this._websocket.onerror = () => {};
+        this._websocket.close();
+        this._websocket = undefined;
+      }
+  }
+  /**
+   * Start the SignalR hubs
+   * @public
+   * @param {number} [protocol=1.5] - The client protocol
+   */
+  public start(protocol = 1.5): void {
+      if (!this._bound) {
+          if (!this.url) return this._error(SignalRErrorCode.invalidURL);
+          if (!(this.url.startsWith('http:') || this.url.startsWith('https:'))) return this._error(SignalRErrorCode.invalidProtocol);
+          if (this._hubNames && this._hubNames.length) {
+              const hubs = [];
+              for (const hub of this._hubNames) hubs.push({ name: hub });
+              this._hubNames = hubs;
+          } else return this._error(SignalRErrorCode.noHub);
+          this._bound = true;
+      }
+      this._negotiate(protocol).then((negotiateProtocol: Record<string, unknown>) => {
+          if (this.connection && typeof(negotiateProtocol.ConnectionToken) === "string" && typeof(negotiateProtocol.ConnectionId) === "string") {
+            this.connection.token = negotiateProtocol.ConnectionToken;
+            this.connection.id = negotiateProtocol.ConnectionId;
+          }
+          if (negotiateProtocol.KeepAliveTimeout && typeof(negotiateProtocol.KeepAliveTimeout) === "number") {
+            this._keepAlive = true
+            this._keepAliveTimeout = negotiateProtocol.KeepAliveTimeout * 1000
+            this._beatInterval = this._keepAliveTimeout / 4
+          } else {
+            this._keepAlive = false
+          }
+          this._connect(protocol);
+      }).catch((error: Error) => {
+          if (this.connection) this.connection.state = SignalRConnectionState.disconnected;
+          // @ts-ignore: Promise only rejects as a Record<string, unknown>, but the type is an Error
+          this._error(error.code, error.message);
+      });
+  }
 }
-/* TODO, this is for deno eslint to shut up */
+/**
+ * SignalR hub for connections
+ */
 export class SignalRHub {
-    constructor(...params: Array<unknown>) {
-        /* TODO */
+    /**
+     * SignalR client
+     * @public
+     * @type {SignalRHub?}
+     */
+    public client?: SignalR;
+    /**
+     * Hub handlers
+     * @public
+     * @type {Record<string, unknown>}
+     */
+    public handlers: Record<string, unknown> = {};
+    /**
+     * Hub callbacks
+     * @public
+     * @type {Record<string, unknown>}
+     */
+    public callbacks: Record<number, unknown> = {};
+    /**
+     * Construct a SignalR hub
+     * @param {SignalR} client - The SignalR client for the hub to use
+     */
+    constructor(client: SignalR) {
+        this.client = client;
+    }
+    /**
+     * Handle a callback - public to allow access by Client
+     * @private
+     * @param {number} invocationId - The number of invocations
+     */
+    public _handleCallback(invocationId: number, error?: string, result?: string): void {
+        const callback = this.callbacks[invocationId];
+        if (callback && typeof(callback) === "function") callback(error, result);
+    }
+    /**
+     * Bind events, receive messages
+     * @param {string} hub - The SignalR hub
+     * @param {string} method - The method
+     * @param {function} callback - Callback function
+     */
+    public on(hub: string, method: string, callback: (error?: string, result?: string) => unknown): void {
+        let handler: Record<string, unknown> | unknown = this.handlers[hub];
+        if (!handler) handler = (this.handlers[hub] = {});
+        // @ts-ignore: Handler was defined above
+        handler[method] = callback;
+    }
+    /**
+     * Process invocation arguments
+     * @private
+     * @param args - The invocation args
+     * @returns {Array<unknown>}
+     */
+    private _processInvocationArgs(args: IArguments): unknown[] {
+        const messages = [];
+        if (args.length > 2) {
+            for (let i = 2; i < args.length; i++) {
+                const arg = args[i];
+                messages[i - 2] =  (typeof arg === "function" || typeof arg === "undefined") ? null : arg;
+            }
+        }
+        return messages;
+    }
+    /**
+     * Call with argumenets
+     * @param {string} hub - The SignalR hub
+     * @param {string} method - The SiggnalR hub method
+     */
+    public call(hub: string, method: string): Promise<unknown> {
+        return new Promise((resolve, reject) => {
+            if (!this.client) return reject();
+            const messages = this._processInvocationArgs(arguments);
+            const invocationId = this.client._invocationId;
+            const timeoutTimer = setTimeout(() => {
+                delete this.callbacks[invocationId];
+                return reject("Timeout");
+            }, this.client._callTimeout || this.client.callTimeout || 5000);
+            this.callbacks[invocationId] = (error: string, result: string) => {
+                clearTimeout(timeoutTimer);
+                delete this.callbacks[invocationId];
+                return error ? reject(error) : resolve(result);
+            };
+            this.client._sendMessage(hub, method, messages);
+        })
+    }
+    public invoke(hub: string, method: string) {
+        const messages = this._processInvocationArgs(arguments);
+        if (this.client) this.client._sendMessage(hub, method, messages);
     }
 }
