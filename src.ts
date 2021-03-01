@@ -80,10 +80,10 @@ export interface SignalRError {
     code: SignalRErrorCode,
     /**
      * SignalR error message
-     * @type {string | null}
+     * @type {string | null | unknown}
      * @memberof SignalRError
      */
-    message: string | null
+    message: string | null | unknown
 }
 /**
  * SignalR connection
@@ -197,10 +197,10 @@ export interface SignalRHubMessage {
  * A SignalR client for Deno which supports ASP.net
  */
 export class SignalR extends Evt<
-    [ "connected" ] |
+    [ "connected", undefined ] |
     [ "disconnected", string ] |
     [ "reconnecting", number ] |
-    [ "error", SignalRErrorCode, unknown?]> 
+    [ "error", SignalRError ]> 
     {
     /**
      * The URL to connect to
@@ -416,13 +416,13 @@ export class SignalR extends Evt<
           query.set("transport", "webSockets");
           query.set("connectionToken", String(this.connection.token));
           query.set("tid", "10");
-          const webSocket = new WebSocket(`${url}/connect?${query}`);
+          const webSocket = new WebSocket(`${url}/connect?${query.toString()}`);
           webSocket.onopen = (event: Event) => {
               this._invocationId = 0;
               this._callTimeout = 0;
               this._start().then(() => {
                   this._reconnectCount = 0;
-                  this.post(["connected"]);
+                  this.post(["connected", undefined]);
                   if (this.connection) this.connection.state = SignalRConnectionState.connected;
                   this._markLastMessage();
                   if (this._keepAlive) this._beat();
@@ -585,7 +585,10 @@ export class SignalR extends Evt<
    * @param {unknown?} extra = Extra data to emit
    */
   private _error(code: SignalRErrorCode, extra?: unknown): void {
-      this.post(["error", code, extra]);
+      this.post(["error", { 
+          code: code, 
+          message: extra 
+      }]);
       if (code === SignalRErrorCode.negotiateError || code === SignalRErrorCode.connectError) {
           this._reconnect(true);
       } else if (code === SignalRErrorCode.startError || code === SignalRErrorCode.connectLost) {
