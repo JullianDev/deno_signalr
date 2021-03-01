@@ -195,6 +195,7 @@ export interface SignalRHubMessage {
 }
 /**
  * A SignalR client for Deno which supports ASP.net
+ * @extends Evt
  */
 export class SignalR extends Evt<
     [ "connected", undefined ] |
@@ -258,13 +259,13 @@ export class SignalR extends Evt<
      */
     private _hubNames?: string[] | Record<string, unknown>[];
     /**
-     * The inovcation ID - public for SignalRHub to use
+     * The inovcation ID
      * @public
      * @type {number}
      */
     public _invocationId = 0;
     /**
-     * Call timeout in milliseconds - public for SignalRHub to use
+     * Call timeout in milliseconds
      * @private
      * @type {number}
      */
@@ -347,7 +348,7 @@ export class SignalR extends Evt<
     }
   }
   /**
-   * Send a message to a hub - public for SignalRHub to use
+   * Send a message to a hub
    * @public
    * @param {string} hub - The message hub to send a message to 
    * @param {string} method = THe method to send with the data
