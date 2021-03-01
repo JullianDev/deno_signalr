@@ -308,7 +308,7 @@ export class SignalR extends Evt<
      * @param {string} url - URL to connect to
      * @param {string[]} hubs - Hubs to connect to
      */
-    constructor(url: string, hubs: string[]) {
+    constructor(url: string, hubs: string[], query: Record<string, unknown> = {}, headers: Record<string, unknown> = {}) {
       super();
       this.url = url;
       this.connection = {
@@ -317,6 +317,8 @@ export class SignalR extends Evt<
           lastMessageAt: new Date().getTime()
       };
       this._hubNames = hubs;
+      this.query = query;
+      this.headers = headers;
   }
   /**
    * Proccess a message
