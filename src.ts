@@ -140,10 +140,10 @@ export interface SignalRMessage {
     M?: string,
     /**
      * Messaga arguments
-     * @type {string?}
+     * @type {unknown?}
      * @memberof SignalRMessage
      */
-    A?: string
+    A?: unknown
 }
 /**
  * Message data from a SignalR hub
@@ -195,7 +195,7 @@ export interface SignalRHubMessage {
 }
 /**
  * A SignalR client for Deno which supports ASP.net
- * @extends Evt
+ * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", SignalRError ]>}
  */
 export class SignalR extends Evt<
     [ "connected", undefined ] |
@@ -242,22 +242,22 @@ export class SignalR extends Evt<
     public connection?: SignalRConnection;
     /**
      * Whether or not it's bound
-     * @private
+     * @public
      * @type {boolean}
      */
-    private _bound = false;
+    public _bound = false;
     /**
      * The websocket connection
-     * @private
+     * @public
      * @type {WebSocket}
      */
-    private _websocket?: WebSocket;
+    public _websocket?: WebSocket;
     /**
      * The hub names to connect to
-     * @private
-     * @type {string[]?}
+     * @public
+     * @type {[string[] | Record<string, unknown>[]]?}
      */
-    private _hubNames?: string[] | Record<string, unknown>[];
+    public _hubNames?: string[] | Record<string, unknown>[];
     /**
      * The inovcation ID
      * @public
@@ -266,44 +266,46 @@ export class SignalR extends Evt<
     public _invocationId = 0;
     /**
      * Call timeout in milliseconds
-     * @private
+     * @public
      * @type {number}
      */
     public _callTimeout = 0;
     /**
-     * The timtout to keep alive in milliseconds
-     * @private
+     * The timeout to keep alive in milliseconds
+     * @public
      * @type {number]
      */
-    private _keepAliveTimeout = 5000;
+    public _keepAliveTimeout = 5000;
     /**
      * Whether or not to keep the connection alive
-     * @private
+     * @public
      * @type {boolean}
      */
-    private _keepAlive = true;
+    public _keepAlive = true;
     /**
      * Interval to beat in milliseconds
-     * @private
+     * @public
      * @type {number}
      */
-    private _beatInterval = 5000;
+    public _beatInterval = 5000;
     /**
      * setInterval instance to beat
-     * @private
+     * @public
      * @type {number}
-     */
-    private _beatTimer?: number;
+    */
+    public _beatTimer?: number;
     /**
      * Amount of times to attempt reconnect
-     * @private
+     * @public
      * @type {number}
      */
-    private _reconnectCount = 0;
+    public _reconnectCount = 0;
     /**
      * setTimeout instance for reconnection
+     * @public
+     * @type {number}
      */
-    private _reconnectTimer?: number;
+    public _reconnectTimer?: number;
     /**
      * @constructor
      * @param {string} url - URL to connect to
@@ -323,10 +325,10 @@ export class SignalR extends Evt<
   }
   /**
    * Proccess a message
-   * @private
+   * @public
    * @param {SignalRHubMessage} message - The SignalR hub message
    */
-  private _receiveMessage(message: SignalRHubMessage): void {
+  public _receiveMessage(message: SignalRHubMessage): void {
     this._markLastMessage();
     if (message.type === "message" && message.data !== "{}") {
         const data: SignalRHubMessageData = JSON.parse(message.data);
@@ -367,11 +369,11 @@ export class SignalR extends Evt<
   }
   /**
    * Negotitate with the endpoint for a connection token
-   * @private
+   * @public
    * @param {number} [protocol=1.5]
    * @returns {Promise<Record<string, unknown>>}
    */
-  private _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
+  public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
       const query = new URLSearchParams();
       for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
       const headers = new Headers();
@@ -403,10 +405,10 @@ export class SignalR extends Evt<
   }
   /**
    * Connect to the websocket
-   * @private
+   * @public
    * @param {number} [protocol=1.5] - The SignalR client protocol
    */
-  private _connect(protocol = 1.5): void {
+  public _connect(protocol = 1.5): void {
       if (this.url && this.connection) {
           const url = this.url.replace(/^http/, "ws");
           const query = new URLSearchParams();
@@ -449,10 +451,10 @@ export class SignalR extends Evt<
   }
   /**
    * Attempt a reconnection to the websocket
-   * @private
+   * @public
    * @param {boolean} [restart=false] - Whether or not it should restart
    */
-  private _reconnect(restart = false): void {
+  public _reconnect(restart = false): void {
       if (this._reconnectTimer || (this.connection && this.connection.state === SignalRConnectionState.reconnecting)) return;
       this._clearBeatTimer();
       this._close();
@@ -466,9 +468,9 @@ export class SignalR extends Evt<
   }
   /**
    * Clear the current reconnect timer if it exists
-   * @private
+   * @public
    */
-  private _clearReconnectTimer(): void {
+  public _clearReconnectTimer(): void {
     if (this._reconnectTimer) {
         clearTimeout(this._reconnectTimer);
         this._reconnectTimer = undefined;
@@ -476,9 +478,9 @@ export class SignalR extends Evt<
   }
   /**
    * Watch time elapsed since last message
-   * @private
+   * @public
    */
-  private _beat(): void {
+  public _beat(): void {
       if (this.connection) {
         const timeElapsed = new Date().getTime() - this.connection.lastMessageAt;
         if (timeElapsed > this._keepAliveTimeout) {
@@ -491,7 +493,11 @@ export class SignalR extends Evt<
         }
     }
   }
-  private _clearBeatTimer(): void {
+  /**
+   * Clear the beat timer
+   * @public
+   */
+  public _clearBeatTimer(): void {
     if (this._beatTimer) {
       clearTimeout(this._beatTimer);
       this._beatTimer = undefined;
@@ -499,18 +505,18 @@ export class SignalR extends Evt<
   }
   /**
    * Mark the last message time as current time
-   * @private
+   * @public
    */
-  private _markLastMessage(): void {
+  public _markLastMessage(): void {
     if (this.connection) this.connection.lastMessageAt = new Date().getTime();
   }
   /**
    * Start the SignalR connection
-   * @private
+   * @public
    * @param {number} [protocol=1.5] - The SignalR client protocol
    * @returns {Promise<Record<string, unknown>>}
    */
-  private _start(protocol = 1.5): Promise<unknown> {
+  public _start(protocol = 1.5): Promise<unknown> {
       if (this.url && this.connection) {
           const query = new URLSearchParams();
           for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
@@ -544,11 +550,11 @@ export class SignalR extends Evt<
   }
   /**
    * Abort the SignalR connection
-   * @private
+   * @public
    * @param {number} [protocol=1.5] - The SignalR client protocol
    * @returns {Promise<Record<void>>}
    */
-  private _abort(protocol = 1.5): Promise<void> {
+  public _abort(protocol = 1.5): Promise<void> {
     if (this.url && this.connection) {
         const query = new URLSearchParams();
         for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
@@ -582,10 +588,11 @@ export class SignalR extends Evt<
   }
   /**
    * Emit an error and attempt a reconnect
+   * @public
    * @param {SignalRErrorCode} code - SignalRError code to emit
    * @param {unknown?} extra = Extra data to emit
    */
-  private _error(code: SignalRErrorCode, extra?: unknown): void {
+  public _error(code: SignalRErrorCode, extra?: unknown): void {
       this.post(["error", { 
           code: code, 
           message: extra 
@@ -598,9 +605,9 @@ export class SignalR extends Evt<
   }
   /**
    * Close the SignalR instance
-   * @private
+   * @public
    */
-  private _close(): void {
+  public _close(): void {
       if (this._websocket) {
         this._websocket.onclose = () => {};
         this._websocket.onmessage = () => {};
@@ -701,7 +708,7 @@ export class SignalRHub {
      * @param args - The invocation args
      * @returns {Array<unknown>}
      */
-    private _processInvocationArgs(args: IArguments): unknown[] {
+    public _processInvocationArgs(args: IArguments): unknown[] {
         const messages = [];
         if (args.length > 2) {
             for (let i = 2; i < args.length; i++) {

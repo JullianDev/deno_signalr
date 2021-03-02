@@ -22,7 +22,7 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 
 # Documentation
-**NOTiCE: This documentation is as of v0.1, usage may change drastically as it reaches v1**
+**NOTiCE: This documentation is as of v0.1.1, usage may change drastically as it reaches v1**
 
 
 ## Importing
