@@ -68,9 +68,9 @@ MyClient.requestTimeout = 6000; // 6s, default: 5000ms (5s)
 Deno-signalr takes advantage of the [Evt](https://deno.land/x/evt) module, which `SignalR` extends:
 ```typescript
 // Attach until dettached
-// MyClient.$attach(SignalR.to(eventName), callback);
+// MyClient.$attach(to(eventName), callback);
 // Attach and then dettach after one time
-// MyClient.$attachOnce(SignalR.to(eventName), callback);
+// MyClient.$attachOnce(to(eventName), callback);
 MhClient.$attach(to("connected", () => {
     console.log("SignalR in Deno Example: Connected");
 }));
