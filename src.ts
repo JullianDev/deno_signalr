@@ -733,7 +733,7 @@ export class SignalRHub {
             this.client._sendMessage(hub, method, messages);
         })
     }
-    public invoke(hub: string, method: string) {
+    public invoke(hub: string, method: string): void {
         const messages = this._processInvocationArgs(arguments);
         if (this.client) this.client._sendMessage(hub, method, messages);
     }
