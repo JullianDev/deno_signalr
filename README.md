@@ -28,14 +28,14 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 ## Importing
 As like any other 3rd-party Deno module, it can be imported with the `import` statement to the mod.ts URL.
 ```typescript
-import * as SignalR from "https://deno.land/x/deno_signalr/mod.ts";
+import { SignalR, SignalRError, to } from "https://deno.land/x/deno_signalr/mod.ts";
 ```
 
 
 ## Creating a client
 Assuming that it has already been imported:
 ```typescript
-const MyClient= new SignalR.SignalR("https://localhost:8080/signalr", [ "MyTestHub" ], { 
+const MyClient = new SignalR("https://localhost:8080/signalr", [ "MyTestHub" ], { 
     "MyOptionalQuery": "MyOptionalQueryValue"
 }, {
     "MyOptionalHeader": "MyOptionalHeaderValue"
@@ -58,9 +58,9 @@ MyClient.query["MyOptionalQuery"] = "MyOptionalQueryValue";
 // Timeout for sending messages
 MyClient.callTimeout = 10000; // 10s, default: 5000ms (5s)
 // Delay time for reconnecting
-MyClient.callTimeout = 2000; // 2s, default: 5000ms (5s)
+MyClient.reconnectDelayTime = 2000; // 2s, default: 5000ms (5s)
 // Timeout for connecting
-MyClient.callTimeout = 6000; // 6s, default: 5000ms (5s)
+MyClient.requestTimeout = 6000; // 6s, default: 5000ms (5s)
 ```
 
 
@@ -71,16 +71,16 @@ Deno-signalr takes advantage of the [Evt](https://deno.land/x/evt) module, which
 // MyClient.$attach(SignalR.to(eventName), callback);
 // Attach and then dettach after one time
 // MyClient.$attachOnce(SignalR.to(eventName), callback);
-MhClient.$attach(SignalR.to("connected", () => {
+MhClient.$attach(to("connected", () => {
     console.log("SignalR in Deno Example: Connected");
 }));
-MhClient.$attach(SignalR.to("reconnecting", (connectionCount: number) => {
+MhClient.$attach(to("reconnecting", (connectionCount: number) => {
     console.log(`SignalR in Deno Example: Connecting... ${connectionCount} tries`);
 }));
-MhClient.$attach(SignalR.to("disconnected", (reason: string) => {
+MhClient.$attach(to("disconnected", (reason: string) => {
     console.log(`SignalR in Deno Example: Disconnected, reason "${reason}"`);
 }));
-MhClient.$attach(SignalR.to("error", (error: SignalR.SignalRError) => {
+MhClient.$attach(to("error", (error: SignalRError) => {
     console.log(`SignalR in Deno Example: Error, code: ${error.code}, message: ${typeof(error.message) === "string" ? error.message : "none"}`);
 }));
 ```
@@ -96,7 +96,7 @@ MyClient.connection.hub.on("MyHub", "MyMethod", (message: unknown) => {
 ```
 
 `
-void SignalRHub.on(string hub, method string, function callback)
+void SignalRHub.on(string hub, string method, function callback)
 `
 
 
@@ -108,7 +108,7 @@ MyClient.connection.hub.call("MyHub", "MyMethod", "hi from SignalR in Deno!").th
 ```
 
 `
-Promise<unknown> SignalRHub.call(string hub, method string, unknown message)
+Promise<unknown> SignalRHub.call(string hub, string method, unknown message)
 `
 
 
@@ -118,7 +118,7 @@ MyClient.connection.hub.invoke("MyHub", "MyMethod", "hi from SignalR in Deno!");
 ```
 
 `
-void SignalRHub.invoke(string hub, method string, unknown message)
+void SignalRHub.invoke(string hub, string method, unknown message)
 `
 
 
