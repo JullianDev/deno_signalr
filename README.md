@@ -135,7 +135,7 @@ void SignalR.start(numbeer protocol = 1.5)
 
 
 ## Ending the connection
-When no longer needed, end the connection:
+When no longer needed, end the connection (if it exists):
 ```typescript
 MyClient.end()
 ```
