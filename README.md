@@ -7,20 +7,26 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 * ✅ Lots of JSDoc integration
 * ✅ Asynchronous
 
+
  ### Credits
  * * [node-signalr](https://github.com/alex8088/node-signalr) - (Original) by [alex.wei](https://github.com/alex8088)
  * * [Julli4n](https://github.com/Julli4n?tab=repositories) - Ported the original
 
+
 ### Dependencies
 * [Evt](https://deno.land/x/evt)
+
+
 ## Documentation
 **NOTiCE: This documentation is as of v0.1, usage may change drastically as it reaches v1**
+
 
 ### Importing
 As like any other 3rd-party Deno module, it can be imported with the `import` statement to the mod.ts URL.
 ```typescript
 import * as SignalR from "https://deno.land/x/deno_signalr/mod.ts";
 ```
+
 
 ### Creating a client
 Assuming that it has already been imported:
@@ -36,6 +42,8 @@ This will create a new SignalR client instance with the parameters given.
 `
 new SignalR(string endpoint, Array<string> hubs[, Record<string, unknown> query][, Record<string, string> headers])
 `
+
+
 ### Configuring a client
 After creating the client, it can be configured:
 ```typescript
@@ -50,6 +58,7 @@ MyClient.callTimeout = 2000; // 2s, default: 5000ms (5s)
 // Timeout for connecting
 MyClient.callTimeout = 6000; // 6s, default: 5000ms (5s)
 ```
+
 
 ### Binding client events
 Deno-signalr takes advantage of the [Evt](https://deno.land/x/evt) module, which `SignalR` extends:
@@ -72,7 +81,9 @@ MhClient.$attach(SignalR.to("error", (error: SignalR.SignalRError) => {
 }));
 ```
 
+
 ### Binding a hub method
+
 #### Bind callback to receive messages
 ```typescript
 MyClient.connection.hub.on("MyHub", "MyMethod", (message: unknown) => {
@@ -83,6 +94,7 @@ MyClient.connection.hub.on("MyHub", "MyMethod", (message: unknown) => {
 `
 void SignalRHub.on(string hub, method string, function callback)
 `
+
 
 #### Call the method and return the values asynchronously
 ```typescript
@@ -95,6 +107,7 @@ MyClient.connection.hub.call("MyHub", "MyMethod", "hi from SignalR in Deno!").th
 Promise<unknown> SignalRHub.call(string hub, method string, unknown message)
 `
 
+
 #### Invoke the method without return values
 ```typescript
 MyClient.connection.hub.invoke("MyHub", "MyMethod", "hi from SignalR in Deno!");
@@ -103,6 +116,7 @@ MyClient.connection.hub.invoke("MyHub", "MyMethod", "hi from SignalR in Deno!");
 `
 void SignalRHub.invoke(string hub, method string, unknown message)
 `
+
 
 ### Starting the connection
 When ready to start the connection to the Hubs, start the client:
@@ -115,6 +129,7 @@ This will negotiate, start and connect with the hubs.
 void SignalR.start(numbeer protocol = 1.5)
 `
 
+
 ### Ending the connection
 When no longer needed, end the connection:
 ```typescript
@@ -124,6 +139,7 @@ MyClient.end()
 `
 void SignalR.end()
 `
+
 
 ## License
 [MIT](./LICENSE)
