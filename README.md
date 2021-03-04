@@ -4,8 +4,9 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 * ✅ Supports ASP.net
 * ✅ Written in TypeScript
 * ✅ Supports custom queries and headers (headers only for HTTP and HTTPS)
-* ✅ Lots of JSDoc integration
+* ✅ Lots of TSDoc integration
 * ✅ Asynchronous
+* ❌ Does not support ASP.net Core
 
 
 ## Credits
@@ -28,28 +29,58 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 ## Importing
 As like any other 3rd-party Deno module, it can be imported with the `import` statement to the mod.ts URL.
 ```typescript
-import { SignalR, SignalRError, to } from "https://deno.land/x/deno_signalr/mod.ts";
+import * as SignalR from "https://deno.land/x/deno_signalr/mod.ts";
 ```
 
 
 ## Creating a client
 Assuming that it has already been imported:
 ```typescript
-const MyClient = new SignalR("https://localhost:8080/signalr", [ "MyTestHub" ], { 
-    "MyOptionalQuery": "MyOptionalQueryValue"
-}, {
-    "MyOptionalHeader": "MyOptionalHeaderValue"
+const MyClient = new SignalR.Client("https://localhost:8080/signalr", [ "MyTestHub" ], { 
+    queries: {
+        MyOptionalQuery: "MyOptionalQueryValue"
+    },
+    headers: {
+        MyOptionalHeader: "MyOptionalHeaderValue"
+    },
+    callTimeout: 5000,
+    reconnectDelayTime: 5000
 });
 ```
 This will create a new SignalR client instance with the parameters given.
 
 `
-new SignalR(string endpoint, Array<string> hubs[, Record<string, unknown> query][, Record<string, string> headers])
+new Client(string endpoint, Array<string> hubs[, ClientOptions options])
 `
 
 
+The ClientOptions interface is the following:
+
+
+```typescript
+export interface ClientOptions {
+    /**
+     * The queries to add to the URL
+     */
+    query?: Record<string, unknown>,
+    /**
+     * The headers for all requests
+     */
+    headers?: Record<string, string>,
+    /**
+     * The timeout for calls in milliseconds
+     */
+    callTimeout?: number,
+    /**
+     * The delay time for reconnecting in milliseconds
+     */
+    reconnectDelayTime?: number
+}
+```
+
+
 ## Configuring a client
-After creating the client, it can be configured:
+After creating the client, it can still be configured:
 ```typescript
 // Custom headers
 MyClient.headers["MyOptionalHeader"] = "nyOptionalVHeaderValue";
@@ -59,13 +90,11 @@ MyClient.query["MyOptionalQuery"] = "MyOptionalQueryValue";
 MyClient.callTimeout = 10000; // 10s, default: 5000ms (5s)
 // Delay time for reconnecting
 MyClient.reconnectDelayTime = 2000; // 2s, default: 5000ms (5s)
-// Timeout for connecting
-MyClient.requestTimeout = 6000; // 6s, default: 5000ms (5s)
 ```
 
 
 ## Binding client events
-Deno-signalr takes advantage of the [Evt](https://deno.land/x/evt) module, which `SignalR` extends:
+deno-signalr takes advantage of the [Evt](https://deno.land/x/evt) module, which `Client` extends:
 ```typescript
 // Attach until dettached
 // MyClient.$attach(to(eventName), callback);
@@ -80,7 +109,7 @@ MhClient.$attach(to("reconnecting", (connectionCount: number) => {
 MhClient.$attach(to("disconnected", (reason: string) => {
     console.log(`SignalR in Deno Example: Disconnected, reason "${reason}"`);
 }));
-MhClient.$attach(to("error", (error: SignalRError) => {
+MhClient.$attach(to("error", (error: SignalR.StandardError) => {
     console.log(`SignalR in Deno Example: Error, code: ${error.code}, message: ${typeof(error.message) === "string" ? error.message : "none"}`);
 }));
 ```

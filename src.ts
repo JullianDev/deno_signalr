@@ -4,7 +4,7 @@ export { to };
 /**
  * SignalR connection state
  */
-export enum SignalRConnectionState {
+export enum ConnectionState {
     /**
      * Connected state
      */
@@ -21,7 +21,7 @@ export enum SignalRConnectionState {
 /**
  * SignalR error codes
  */
-export enum SignalRErrorCode {
+export enum ErrorCode {
     /**
      * Invalid URL
      */
@@ -31,11 +31,11 @@ export enum SignalRErrorCode {
      */
     invalidProtocol = "Invalid protocol",
     /**
-     * No SignalR hub
+     * No hub
      */
     noHub = "No hub",
     /**
-     * Webosckets are not suppprted by server
+     * Webosckets are not suppprted by the webserver
      */
     unsupportedWebsocket = "Websockets is not supported",
     /**
@@ -51,11 +51,11 @@ export enum SignalRErrorCode {
      */
     negotiateError = "Negotiate error",
     /**
-     * Error during startup
+     * Start error
      */
     startError = "Start error",
     /**
-     * Error during connection
+     * Connection error
      */
     connectError = "Connect error",
     /**
@@ -68,230 +68,218 @@ export enum SignalRErrorCode {
     abortError = "Abort error"
 }
 /**
- * SignalR error
- * @interface SignalRError
+ * SignalR error with Code and Message properties
+ * @interface StandardError
  */
-export interface SignalRError {
+export interface StandardError {
     /**
-     * SignalR error code
-     * @type {SignalRErrorCode}
-     * @memberof SignalRError
+     * Error code
+     * @memberof StandardError
      */
-    code: SignalRErrorCode,
+    code: ErrorCode,
     /**
-     * SignalR error message
-     * @type {string | null | unknown}
-     * @memberof SignalRError
+     * Error message
+     * @memberof StandardError
      */
     message: string | null | unknown
 }
 /**
  * SignalR connection
- * @interface SignalRConnection
+ * @interface Connection
  */
-export interface SignalRConnection {
+export interface Connection {
     /**
-     * The connection state of the connection
-     * @type {SignalRConnectionState}
-     * @memberof SignalRConnection
+     * The connection state
+     * @memberof Connection
      */
-    state: SignalRConnectionState,
+    state: ConnectionState,
     /**
-     * The assigned hub
-     * @type {SignalRHub}
-     * @memberof SignalRConnection
+     * The assigned hub's name
+     * @memberof Connection
      */
-    hub: SignalRHub,
+    hub: Hub,
     /**
-     * The date of the last message in milliseconds from 0
-     * @type {number}
-     * @memberof SignalRConnection
+     * The date of the last message in milliseconds
+     * @memberof Connection
      */
     lastMessageAt: number,
     /**
-     * The connection token
-     * @type {string}
-     * @memberof SignalRConnection
+     * The connection token from negotiation
+     * @memberof Connection
      */
     token?: string,
     /**
      * The connection id
-     * @type {string}
-     * @memberof SignalRConnection
+     * @memberof Connection
      */
     id?: string
 }
 /**
  * SignalR message
- * @interface SignalRMessage
+ * @interface Message
  */
-export interface SignalRMessage {
+export interface Message {
     /**
-     * The assigned hub
-     * @type {string?}
-     * @memberof SignalRMessage
+     * The hub name
+     * @memberof Message
      */
     H?: string,
     /**
-     * Message method
-     * @type {string?}
-     * @memberof SignalRMessage
+     * The hub method
+     * @memberof Message
      */
     M?: string,
     /**
-     * Messaga arguments
-     * @type {unknown?}
-     * @memberof SignalRMessage
+     * The message's arguments
+     * @memberof Message
      */
     A?: unknown
 }
 /**
- * Message data from a SignalR hub
- * @interface SignalRHubMessageData
+ * Message data from a connection
+ * @interface HubMessageData
  */
-export interface SignalRHubMessageData {
+export interface HubMessageData {
     /**
      * Array of SignalRMessages
-     * @type {SignalRHubMessage[]?}
-     * @memberof SignalRHubMessageData
+     * @memberof HubMessageData
      */
-    M?: SignalRMessage[],
+    M?: Message[],
     /**
      * Invocation ID
-     * @type {number}
-     * @memberof SignalRHubMessageData
+     * @memberof HubMessageData
      */
     I?: number,
     /**
      * Message error
-     * @type {string}
-     * @memberof SignalRHubMessageData
+     * @memberof HubMessageData
      */
     E?: string,
     /**
-     * Message result
-     * @type {string}
-     * @memberof SignalRHubMessageData
+     * Whether or not it was successful
+     * @memberof HubMessageData
      */
-    R?: string
+    R?: boolean
 }
 /**
  * Message from a SignalR hub
- * @interface SignalRHubMessage
+ * @interface HubMessage
  */
-export interface SignalRHubMessage {
+export interface HubMessage {
     /**
      * The message type
      * @type {string}
-     * @memberof SignalRHubMessage
+     * @memberof HubMessage
      */
     type: string,
     /**
      * The data sent
      * @type {string}
-     * @memberof SignalRHubMessage
+     * @memberof HubMessage
      */
     data: string
 }
+export interface ClientOptions {
+    /**
+     * The queries to add to the URL
+     */
+    queries?: Record<string, unknown>,
+    /**
+     * The headers for all requests
+     */
+    headers?: Record<string, string>,
+    /**
+     * The timeout for calls in milliseconds
+     */
+    callTimeout?: number,
+    /**
+     * The delay time for reconnecting in milliseconds
+     */
+    reconnectDelayTime?: number
+}
 /**
  * A SignalR client for Deno which supports ASP.net
- * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", SignalRError ]>}
+ * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", StandardError ]>}
  */
-export class SignalR extends Evt<
+export class Client extends Evt<
     [ "connected", undefined ] |
     [ "disconnected", string ] |
     [ "reconnecting", number ] |
-    [ "error", SignalRError ]> 
+    [ "error", StandardError ]> 
     {
     /**
      * The URL to connect to
-     * @type {string?}
      * @public
      */
     public url?: string;
     /**
      * The queries to add to the URL
      * @public
-     * @type {url}
      */
     public query: Record<string, unknown> = {};
     /**
-     * The headers for the reuquest
+     * The headers for all requests
      * @public
-     * @readonly
-     * @type {Record<string, unknown>}
      */
     public headers: Record<string,  unknown> = {};
     /**
      * The delay time for reconnecting in milliseconds
      * @public
-     * @type {number}
      */
     public reconnectDelayTime = 5000;
     /**
      * The timeout for calls in milliseconds
      * @public
-     * @type {number}
      */
     public callTimeout = 5000;
     /**
      * The call timeout
      * @public
-     * @type {SignalRConnection?}
      */
-    public connection?: SignalRConnection;
+    public connection?: Connection;
     /**
      * Whether or not it's bound
      * @public
-     * @type {boolean}
      */
     public _bound = false;
     /**
      * The websocket connection
      * @public
-     * @type {WebSocket}
      */
     public _websocket?: WebSocket;
     /**
      * The hub names to connect to
      * @public
-     * @type {[string[] | Record<string, unknown>[]]?}
      */
     public _hubNames?: string[] | Record<string, unknown>[];
     /**
      * The inovcation ID
      * @public
-     * @type {number}
      */
     public _invocationId = 0;
     /**
      * Call timeout in milliseconds
      * @public
-     * @type {number}
      */
     public _callTimeout = 0;
     /**
      * The timeout to keep alive in milliseconds
      * @public
-     * @type {number]
      */
     public _keepAliveTimeout = 5000;
     /**
-     * Whether or not to keep the connection alive
+     * Whether or not to keep the connection alive after disconnection
      * @public
-     * @type {boolean}
      */
     public _keepAlive = true;
     /**
      * Interval to beat in milliseconds
      * @public
-     * @type {number}
      */
     public _beatInterval = 5000;
     /**
      * setInterval instance to beat
      * @public
-     * @type {number}
     */
     public _beatTimer?: number;
     /**
@@ -303,37 +291,40 @@ export class SignalR extends Evt<
     /**
      * setTimeout instance for reconnection
      * @public
-     * @type {number}
      */
     public _reconnectTimer?: number;
     /**
      * @constructor
-     * @param {string} url - URL to connect to
-     * @param {string[]} hubs - Hubs to connect to
+     * @param url - URL to connect to
+     * @param hubs - Hubs to connect to
      */
-    constructor(url: string, hubs: string[], query: Record<string, unknown> = {}, headers: Record<string, unknown> = {}) {
+    constructor(url: string, hubs: string[], options?: ClientOptions) {
       super();
       this.url = url;
       this.connection = {
-          state: SignalRConnectionState.disconnected,
-          hub: new SignalRHub(this),
+          state: ConnectionState.disconnected,
+          hub: new Hub(this),
           lastMessageAt: new Date().getTime()
       };
       this._hubNames = hubs;
-      this.query = query;
-      this.headers = headers;
+      if (options) {
+        if (options.queries) this.query = options.queries;
+        if (options.headers) this.headers = options.headers;
+        if (options.callTimeout) this.callTimeout = options.callTimeout;
+        if (options.reconnectDelayTime) this.reconnectDelayTime = options.reconnectDelayTime;
+      }
   }
   /**
    * Proccess a message
    * @public
-   * @param {SignalRHubMessage} message - The SignalR hub message
+   * @param message - The SignalR hub message
    */
-  public _receiveMessage(message: SignalRHubMessage): void {
+  public _receiveMessage(message: HubMessage): void {
     this._markLastMessage();
     if (message.type === "message" && message.data !== "{}") {
-        const data: SignalRHubMessageData = JSON.parse(message.data);
+        const data: HubMessageData = JSON.parse(message.data);
         if (data.M) {
-            data.M.forEach((message: SignalRMessage) => {
+            data.M.forEach((message: Message) => {
                 if (this.connection && message.H) {
                     const hub = message.H;
                     const handler = this.connection.hub.handlers[hub];
@@ -387,17 +378,17 @@ export class SignalR extends Evt<
             method: "GET",
             headers: headers
         }).catch((error: Error) =>
-            reject({ code: SignalRErrorCode.negotiateError, message: error })
+            reject({ code: ErrorCode.negotiateError, message: error })
         ).then(async (data: Response | void) => {
             if (data) {
                 if (data.ok) {
                     const negotiateProtocol = await data.json();
-                    if (!negotiateProtocol.TryWebSockets) return reject({ code: SignalRErrorCode.unsupportedWebsocket, message: null });
+                    if (!negotiateProtocol.TryWebSockets) return reject({ code: ErrorCode.unsupportedWebsocket, message: null });
                     resolve(negotiateProtocol);
                 } else if (data.status === 302 || data.status === 401 || data.status === 403) {
-                    reject({ code: SignalRErrorCode.unauthorized, message: null });
+                    reject({ code: ErrorCode.unauthorized, message: null });
                 } else {
-                    reject({ code: SignalRErrorCode.negotiateError, message: data.status })
+                    reject({ code: ErrorCode.negotiateError, message: data.status })
                 }
             }
         });
@@ -406,7 +397,7 @@ export class SignalR extends Evt<
   /**
    * Connect to the websocket
    * @public
-   * @param {number} [protocol=1.5] - The SignalR client protocol
+   * @param protocol - The SignalR client protocol
    */
   public _connect(protocol = 1.5): void {
       if (this.url && this.connection) {
@@ -426,23 +417,23 @@ export class SignalR extends Evt<
               this._start().then(() => {
                   this._reconnectCount = 0;
                   this.post(["connected", undefined]);
-                  if (this.connection) this.connection.state = SignalRConnectionState.connected;
+                  if (this.connection) this.connection.state = ConnectionState.connected;
                   this._markLastMessage();
                   if (this._keepAlive) this._beat();
-              }).catch((error: SignalRError) => {
-                if (this.connection) this.connection.state = SignalRConnectionState.disconnected;
+              }).catch((error: StandardError) => {
+                if (this.connection) this.connection.state = ConnectionState.disconnected;
                 this._error(error.code, error.message);
               });
           }
           webSocket.onerror = (event: Event | ErrorEvent) => {
-              if ("error" in event) this._error(SignalRErrorCode.socketError, event.error);
+              if ("error" in event) this._error(ErrorCode.socketError, event.error);
           }
-          webSocket.onmessage = (message: SignalRHubMessage) => {
+          webSocket.onmessage = (message: HubMessage) => {
               this._receiveMessage(message);
           }
           webSocket.onclose = (event: CloseEvent) => {
             this._callTimeout = 1000;
-            if (this.connection) this.connection.state = SignalRConnectionState.disconnected;
+            if (this.connection) this.connection.state = ConnectionState.disconnected;
             this.post(["disconnected", "failed"]);
             this._reconnect();
           }
@@ -452,15 +443,15 @@ export class SignalR extends Evt<
   /**
    * Attempt a reconnection to the websocket
    * @public
-   * @param {boolean} [restart=false] - Whether or not it should restart
+   * @param restart - Whether or not it should restart
    */
   public _reconnect(restart = false): void {
-      if (this._reconnectTimer || (this.connection && this.connection.state === SignalRConnectionState.reconnecting)) return;
+      if (this._reconnectTimer || (this.connection && this.connection.state === ConnectionState.reconnecting)) return;
       this._clearBeatTimer();
       this._close();
       this._reconnectTimer = setTimeout(() => {
         this._reconnectCount++
-        if (this.connection) this.connection.state = SignalRConnectionState.reconnecting;
+        if (this.connection) this.connection.state = ConnectionState.reconnecting;
         this.post(["reconnecting", this._reconnectCount]);
         restart ? this.start() : this._connect();
         this._reconnectTimer = undefined;
@@ -484,8 +475,8 @@ export class SignalR extends Evt<
       if (this.connection) {
         const timeElapsed = new Date().getTime() - this.connection.lastMessageAt;
         if (timeElapsed > this._keepAliveTimeout) {
-            this.connection.state = SignalRConnectionState.disconnected;
-            this._error(SignalRErrorCode.connectLost)
+            this.connection.state = ConnectionState.disconnected;
+            this._error(ErrorCode.connectLost)
         } else {
             this._beatTimer = setTimeout(() => {
                 this._beat()
@@ -513,8 +504,7 @@ export class SignalR extends Evt<
   /**
    * Start the SignalR connection
    * @public
-   * @param {number} [protocol=1.5] - The SignalR client protocol
-   * @returns {Promise<Record<string, unknown>>}
+   * @param protocol - The SignalR client protocol
    */
   public _start(protocol = 1.5): Promise<unknown> {
       if (this.url && this.connection) {
@@ -533,26 +523,25 @@ export class SignalR extends Evt<
                 method: "GET",
                 headers: headers
             }).catch((error: Error) =>
-                reject({ code: SignalRErrorCode.startError, message: error })
+                reject({ code: ErrorCode.startError, message: error })
             ).then(async (data: Response | void) => {
                 if (data) {
                     if (data.ok) {
                         resolve(await data.json())
                     } else if (data.status === 302 || data.status === 401 || data.status === 403) {
-                        reject({ code: SignalRErrorCode.unauthorized, message: null });
+                        reject({ code: ErrorCode.unauthorized, message: null });
                     } else {
-                        reject({ code: SignalRErrorCode.startError, message: data.status })
+                        reject({ code: ErrorCode.startError, message: data.status })
                     }
                 }
             });
           });
-      } else throw new Error(`A connection has not yet been established.`);
+      } else throw new Error("A connection has not yet been established.");
   }
   /**
    * Abort the SignalR connection
    * @public
-   * @param {number} [protocol=1.5] - The SignalR client protocol
-   * @returns {Promise<Record<void>>}
+   * @param protocol - The SignalR client protocol
    */
   public _abort(protocol = 1.5): Promise<void> {
     if (this.url && this.connection) {
@@ -571,15 +560,15 @@ export class SignalR extends Evt<
               method: "POST",
               headers: headers
           }).catch((error: Error) =>
-              reject({ code: SignalRErrorCode.abortError, message: error })
+              reject({ code: ErrorCode.abortError, message: error })
           ).then((data: Response | void) => {
               if (data) {
                   if (data.ok) {
                       resolve()
                   } else if (data.status === 302 || data.status === 401 || data.status === 403) {
-                      reject({ code: SignalRErrorCode.unauthorized, message: null });
+                      reject({ code: ErrorCode.unauthorized, message: null });
                   } else {
-                      reject({ code: SignalRErrorCode.abortError, message: data.status })
+                      reject({ code: ErrorCode.abortError, message: data.status })
                   }
               }
           });
@@ -592,14 +581,14 @@ export class SignalR extends Evt<
    * @param {SignalRErrorCode} code - SignalRError code to emit
    * @param {unknown?} extra = Extra data to emit
    */
-  public _error(code: SignalRErrorCode, extra?: unknown): void {
+  public _error(code: ErrorCode, extra?: unknown): void {
       this.post(["error", { 
           code: code, 
           message: extra 
       }]);
-      if (code === SignalRErrorCode.negotiateError || code === SignalRErrorCode.connectError) {
+      if (code === ErrorCode.negotiateError || code === ErrorCode.connectError) {
           this._reconnect(true);
-      } else if (code === SignalRErrorCode.startError || code === SignalRErrorCode.connectLost) {
+      } else if (code === ErrorCode.startError || code === ErrorCode.connectLost) {
           this._reconnect();
       }
   }
@@ -617,19 +606,19 @@ export class SignalR extends Evt<
       }
   }
   /**
-   * Start the SignalR hubs
+   * Start the SignalR connection
    * @public
-   * @param {number} [protocol=1.5] - The client protocol
+   * @param protocol - The client protocol
    */
   public start(protocol = 1.5): void {
       if (!this._bound) {
-          if (!this.url) return this._error(SignalRErrorCode.invalidURL);
-          if (!(this.url.startsWith('http:') || this.url.startsWith('https:'))) return this._error(SignalRErrorCode.invalidProtocol);
+          if (!this.url) return this._error(ErrorCode.invalidURL);
+          if (!(this.url.startsWith('http:') || this.url.startsWith('https:'))) return this._error(ErrorCode.invalidProtocol);
           if (this._hubNames && this._hubNames.length) {
               const hubs = [];
               for (const hub of this._hubNames) hubs.push({ name: hub });
               this._hubNames = hubs;
-          } else return this._error(SignalRErrorCode.noHub);
+          } else return this._error(ErrorCode.noHub);
           this._bound = true;
       }
       this._negotiate(protocol).then((negotiateProtocol: Record<string, unknown>) => {
@@ -646,55 +635,65 @@ export class SignalR extends Evt<
           }
           this._connect(protocol);
       }).catch((error: Error) => {
-          if (this.connection) this.connection.state = SignalRConnectionState.disconnected;
+          if (this.connection) this.connection.state = ConnectionState.disconnected;
           // @ts-ignore: Promise only rejects as a Record<string, unknown>, but the type is an Error
           this._error(error.code, error.message);
       });
+  }
+  /**
+   * End the SignalR connection
+   * @public
+   */
+  public end() {
+      if (this._websocket) {
+          this.post(["disconnected", "end"]);
+          this._abort().catch();
+          this._clearReconnectTimer();
+          this._clearBeatTimer();
+          this._close();
+      }
   }
 }
 /**
  * SignalR hub for connections
  */
-export class SignalRHub {
+export class Hub {
     /**
      * SignalR client
      * @public
-     * @type {SignalRHub?}
      */
-    public client?: SignalR;
+    public client?: Client;
     /**
-     * Hub handlers
+     * Hub message handlers
      * @public
-     * @type {Record<string, unknown>}
      */
     public handlers: Record<string, unknown> = {};
     /**
-     * Hub callbacks
+     * Hub message callbacks
      * @public
-     * @type {Record<string, unknown>}
      */
     public callbacks: Record<number, unknown> = {};
     /**
      * Construct a SignalR hub
-     * @param {SignalR} client - The SignalR client for the hub to use
+     * @param client - The SignalR client for the hub to use
      */
-    constructor(client: SignalR) {
+    constructor(client: Client) {
         this.client = client;
     }
     /**
      * Handle a callback - public to allow access by Client
      * @private
-     * @param {number} invocationId - The number of invocations
+     * @param invocationId - The invcoation ID
      */
-    public _handleCallback(invocationId: number, error?: string, result?: string): void {
+    public _handleCallback(invocationId: number, error?: string, result?: boolean): void {
         const callback = this.callbacks[invocationId];
         if (callback && typeof(callback) === "function") callback(error, result);
     }
     /**
      * Bind events, receive messages
-     * @param {string} hub - The SignalR hub
-     * @param {string} method - The method
-     * @param {function} callback - Callback function
+     * @param hub - The hub name
+     * @param method - The method name
+     * @param callback - Function to be called on callback
      */
     public on(hub: string, method: string, callback: (error?: string, result?: string) => unknown): void {
         let handler: Record<string, unknown> | unknown = this.handlers[hub];
@@ -706,7 +705,6 @@ export class SignalRHub {
      * Process invocation arguments
      * @private
      * @param args - The invocation args
-     * @returns {Array<unknown>}
      */
     public _processInvocationArgs(args: IArguments): unknown[] {
         const messages = [];
@@ -719,9 +717,9 @@ export class SignalRHub {
         return messages;
     }
     /**
-     * Call with argumenets
-     * @param {string} hub - The SignalR hub
-     * @param {string} method - The SiggnalR hub method
+     * Call with argumenets with return promise
+     * @param hub - The SignalR hub
+     * @param method - The SiggnalR hub method
      */
     public call(hub: string, method: string): Promise<unknown> {
         return new Promise((resolve, reject) => {
@@ -740,6 +738,11 @@ export class SignalRHub {
             this.client._sendMessage(hub, method, messages);
         })
     }
+    /**
+     * Call with arguments without a return value
+     * @param hub - The SignalR hub
+     * @param method - The SignalR hub method
+     */
     public invoke(hub: string, method: string): void {
         const messages = this._processInvocationArgs(arguments);
         if (this.client) this.client._sendMessage(hub, method, messages);
