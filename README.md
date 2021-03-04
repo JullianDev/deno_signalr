@@ -23,7 +23,7 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 
 # Documentation
-**NOTiCE: This documentation is as of v0.1.1, usage may change drastically as it reaches v1**
+**NOTiCE: This documentation is as of v0.2, usage may change drastically as it reaches v1**
 
 
 ## Importing
@@ -125,7 +125,7 @@ MyClient.connection.hub.on("MyHub", "MyMethod", (message: unknown) => {
 ```
 
 `
-void SignalRHub.on(string hub, string method, function callback)
+void Hub.on(string hub, string method, function callback)
 `
 
 
@@ -137,7 +137,7 @@ MyClient.connection.hub.call("MyHub", "MyMethod", "hi from SignalR in Deno!").th
 ```
 
 `
-Promise<unknown> SignalRHub.call(string hub, string method, unknown message)
+Promise<unknown> Hub.call(string hub, string method, unknown message)
 `
 
 
@@ -147,7 +147,7 @@ MyClient.connection.hub.invoke("MyHub", "MyMethod", "hi from SignalR in Deno!");
 ```
 
 `
-void SignalRHub.invoke(string hub, string method, unknown message)
+void Hub.invoke(string hub, string method, unknown message)
 `
 
 
@@ -159,7 +159,7 @@ MyClient.start();
 This will negotiate, start and connect with the hubs.
 
 `
-void SignalR.start(numbeer protocol = 1.5)
+void Client.start(numbeer protocol = 1.5)
 `
 
 
@@ -170,5 +170,5 @@ MyClient.end()
 ```
 
 `
-void SignalR.end()
+void Client.end()
 `
