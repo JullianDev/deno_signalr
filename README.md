@@ -97,19 +97,19 @@ MyClient.reconnectDelayTime = 2000; // 2s, default: 5000ms (5s)
 deno-signalr takes advantage of the [Evt](https://deno.land/x/evt) module, which `Client` extends:
 ```typescript
 // Attach until dettached
-// MyClient.$attach(to(eventName), callback);
+// MyClient.$attach(SignalR.to(eventName), callback);
 // Attach and then dettach after one time
-// MyClient.$attachOnce(to(eventName), callback);
-MhClient.$attach(to("connected", () => {
+// MyClient.$attachOnce(SignalR.to(eventName), callback);
+MhClient.$attach(SignalR.to("connected", () => {
     console.log("SignalR in Deno Example: Connected");
 }));
-MhClient.$attach(to("reconnecting", (connectionCount: number) => {
+MhClient.$attach(SignalR.to("reconnecting", (connectionCount: number) => {
     console.log(`SignalR in Deno Example: Connecting... ${connectionCount} tries`);
 }));
-MhClient.$attach(to("disconnected", (reason: string) => {
+MhClient.$attach(SignalR.to("disconnected", (reason: string) => {
     console.log(`SignalR in Deno Example: Disconnected, reason "${reason}"`);
 }));
-MhClient.$attach(to("error", (error: SignalR.StandardError) => {
+MhClient.$attach(SignalR.to("error", (error: SignalR.StandardError) => {
     console.log(`SignalR in Deno Example: Error, code: ${error.code}, message: ${typeof(error.message) === "string" ? error.message : "none"}`);
 }));
 ```
@@ -159,7 +159,7 @@ MyClient.start();
 This will negotiate, start and connect with the hubs.
 
 `
-void Client.start(numbeer protocol = 1.5)
+void Client.start(number protocol = 1.5)
 `
 
 
