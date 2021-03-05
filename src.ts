@@ -168,13 +168,11 @@ export interface HubMessageData {
 export interface HubMessage {
     /**
      * The message type
-     * @type {string}
      * @memberof HubMessage
      */
     type: string,
     /**
      * The data sent
-     * @type {string}
      * @memberof HubMessage
      */
     data: string
@@ -343,9 +341,9 @@ export class Client extends Evt<
   /**
    * Send a message to a hub
    * @public
-   * @param {string} hub - The message hub to send a message to 
-   * @param {string} method = THe method to send with the data
-   * @param {unknown} args - Args to send
+   * @param hub - The message hub to send a message to 
+   * @param method = THe method to send with the data
+   * @param args - Args to send
    */
   public _sendMessage(hub: string, method: string, args: unknown): void {
       const payload = JSON.stringify({
