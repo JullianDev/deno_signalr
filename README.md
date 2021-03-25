@@ -20,6 +20,7 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 ## Dependencies
 * [Evt](https://deno.land/x/evt)
+* [Custom Sucket](https://deno.land/x/custom_socket)
 
 
 # Documentation

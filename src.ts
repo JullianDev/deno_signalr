@@ -1,5 +1,7 @@
 import { Evt, to } from "./deps.ts";
 export { to };
+import * as test from "./deps.ts";
+import { WS } from "./deps.ts";
 
 /**
  * SignalR connection state
@@ -219,7 +221,7 @@ export class Client extends Evt<
      * The headers for all requests
      * @public
      */
-    public headers: Record<string,  unknown> = {};
+    public headers: Record<string,  string> = {};
     /**
      * The delay time for reconnecting in milliseconds
      * @public
@@ -244,7 +246,7 @@ export class Client extends Evt<
      * The websocket connection
      * @public
      */
-    public _websocket?: WebSocket;
+    public _websocket?: WS;
     /**
      * The hub names to connect to
      * @public
@@ -317,7 +319,7 @@ export class Client extends Evt<
    * @public
    * @param message - The SignalR hub message
    */
-  public _receiveMessage(message: HubMessage): void {
+  public _receiveMessage(message: MessageEvent): void {
     this._markLastMessage();
     if (message.type === "message" && message.data !== "{}") {
         const data: HubMessageData = JSON.parse(message.data);
@@ -353,7 +355,7 @@ export class Client extends Evt<
          I: this._invocationId 
       });
       this._invocationId++;
-      if (this._websocket && (this._websocket.readyState === this._websocket.OPEN)) 
+      if (this._websocket && (this._websocket.readyState === WebSocket.OPEN)) 
         this._websocket.send(payload);
   }
   /**
@@ -408,7 +410,7 @@ export class Client extends Evt<
           query.set("transport", "webSockets");
           query.set("connectionToken", String(this.connection.token));
           query.set("tid", "10");
-          const webSocket = new WebSocket(`${url}/connect?${query.toString()}`);
+          const webSocket = new WS(`${url}/connect?${query.toString()}`, this.headers);
           webSocket.onopen = (event: Event) => {
               this._invocationId = 0;
               this._callTimeout = 0;
@@ -426,7 +428,7 @@ export class Client extends Evt<
           webSocket.onerror = (event: Event | ErrorEvent) => {
               if ("error" in event) this._error(ErrorCode.socketError, event.error);
           }
-          webSocket.onmessage = (message: HubMessage) => {
+          webSocket.onmessage = (message: MessageEvent<unknown>) => {
               this._receiveMessage(message);
           }
           webSocket.onclose = (event: CloseEvent) => {
@@ -679,8 +681,8 @@ export class Hub {
         this.client = client;
     }
     /**
-     * Handle a callback - public to allow access by Client
-     * @private
+     * Handle a callback
+     * @public
      * @param invocationId - The invcoation ID
      */
     public _handleCallback(invocationId: number, error?: string, result?: boolean): void {
@@ -689,6 +691,7 @@ export class Hub {
     }
     /**
      * Bind events, receive messages
+     * @public
      * @param hub - The hub name
      * @param method - The method name
      * @param callback - Function to be called on callback
@@ -701,28 +704,28 @@ export class Hub {
     }
     /**
      * Process invocation arguments
-     * @private
+     * @public
      * @param args - The invocation args
      */
-    public _processInvocationArgs(args: IArguments): unknown[] {
+    public _processInvocationArgs(args: unknown[]): unknown[] {
         const messages = [];
-        if (args.length > 2) {
-            for (let i = 2; i < args.length; i++) {
-                const arg = args[i];
-                messages[i - 2] =  (typeof arg === "function" || typeof arg === "undefined") ? null : arg;
-            }
+        for (let i = 0; i < args.length; i++) {
+            const arg = args[i];
+            messages.push((typeof arg === "function" || typeof arg === "undefined") ? null : arg);
         }
         return messages;
     }
     /**
      * Call with argumenets with return promise
+     * @public 
      * @param hub - The SignalR hub
      * @param method - The SiggnalR hub method
+     * @param args - The arguments as an ellipsis
      */
-    public call(hub: string, method: string): Promise<unknown> {
+    public call(hub: string, method: string, ...args: unknown[]): Promise<unknown> {
         return new Promise((resolve, reject) => {
             if (!this.client) return reject();
-            const messages = this._processInvocationArgs(arguments);
+            const messages = this._processInvocationArgs(args);
             const invocationId = this.client._invocationId;
             const timeoutTimer = setTimeout(() => {
                 delete this.callbacks[invocationId];
@@ -738,11 +741,13 @@ export class Hub {
     }
     /**
      * Call with arguments without a return value
+     * @public
      * @param hub - The SignalR hub
      * @param method - The SignalR hub method
+     * @param args - The arguments as an ellipsis
      */
-    public invoke(hub: string, method: string): void {
-        const messages = this._processInvocationArgs(arguments);
+    public invoke(hub: string, method: string, ...args: unknown[]): void {
+        const messages = this._processInvocationArgs(args);
         if (this.client) this.client._sendMessage(hub, method, messages);
     }
 }
