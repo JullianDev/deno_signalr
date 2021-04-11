@@ -3,7 +3,7 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
  A SignalR client for Deno
 * ✅ Supports ASP.net
 * ✅ Written in TypeScript
-* ✅ Supports custom queries and headers (headers only for HTTP and HTTPS)
+* ✅ Supports custom queries and headers
 * ✅ Lots of TSDoc integration
 * ✅ Asynchronous
 * ❌ Does not support ASP.net Core
