@@ -11,7 +11,7 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 ## Credits
  * [node-signalr](https://github.com/alex8088/node-signalr) - (Original) by [alex.wei](https://github.com/alex8088)
- * [Julli4n](https://github.com/Julli4n?tab=repositories) - Ported the original
+ * [Julli4n](https://github.com/Julli4n) - Ported the original
 
 
 ## License
@@ -20,7 +20,9 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 ## Dependencies
 * [Evt](https://deno.land/x/evt)
-* [Custom Sucket](https://deno.land/x/custom_socket)
+  * Used for Event Emitters
+* [Custom Socket](https://deno.land/x/custom_socket)
+  * Used for custom headers on WebSockets
 
 
 # Documentation

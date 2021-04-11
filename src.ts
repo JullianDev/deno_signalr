@@ -1,6 +1,5 @@
 import { Evt, to } from "./deps.ts";
 export { to };
-import * as test from "./deps.ts";
 import { WS } from "./deps.ts";
 
 /**
