@@ -177,9 +177,9 @@ export interface HubMessage {
 }
 export interface ClientOptions {
     /**
-     * The queries to add to the URL
+     * The query to add to the URL
      */
-    queries?: Record<string, unknown>,
+    query?: Record<string, unknown>,
     /**
      * The headers for all requests
      */
@@ -191,5 +191,13 @@ export interface ClientOptions {
     /**
      * The delay time for reconnecting in milliseconds
      */
-    reconnectDelayTime?: number
+    reconnectDelayTime?: number,
+    /**
+     * The request timeout in milliseconds
+     */
+    requestTimeout?: number,
+    /**
+     * Set agent for HTTPS requests
+    */
+   agent?: boolean;
 }

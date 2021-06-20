@@ -123,10 +123,12 @@ export { to };
    };
    this._hubNames = hubs;
    if (options) {
-     if (options.queries) this.query = options.queries;
+     if (options.query) this.query = options.query;
      if (options.headers) this.headers = options.headers;
      if (options.callTimeout) this.callTimeout = options.callTimeout;
      if (options.reconnectDelayTime) this.reconnectDelayTime = options.reconnectDelayTime;
+     if (options.requestTimeout) this.requestTimeout = options.requestTimeout;
+     if (options.agent) this.agent = options.agent;
    }
 }
 /**
