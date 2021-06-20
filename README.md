@@ -26,7 +26,7 @@ a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 
 # Documentation
-**NOTICE: This documentation is as of v0.3, usage may change drastically as it reaches v1**
+**NOTICE: This documentation is as of v0.4, usage may change drastically as it reaches v1**
 
 
 ## Importing
