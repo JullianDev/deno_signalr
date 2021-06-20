@@ -28,6 +28,11 @@ export { to };
   */
  public headers: Record<string,  string> = {};
  /**
+  * Set agent for HTTPS requests
+  * @public
+  */
+ public agent = false;
+ /**
   * The delay time for reconnecting in milliseconds
   * @public
   */
@@ -37,6 +42,11 @@ export { to };
   * @public
   */
  public callTimeout = 5000;
+ /**
+  * The request timeout in millisecnds
+  * @public
+  */
+ public requestTimeout = 5000;
  /**
   * The call timeout
   * @public
@@ -177,6 +187,8 @@ public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
 
    query.set("connectionData", JSON.stringify(this._hubNames));
    query.set("clientProtocol", String(protocol));
+   query.set("timeout", String(this.requestTimeout));
+   query.set("agent", String(this.agent));
    const url = `${this.url}/negotiate?${query.toString()}`;
    return new Promise((resolve, reject) => {
      fetch(url, {
@@ -188,7 +200,7 @@ public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
          if (data) {
              if (data.ok) {
                  const negotiateProtocol = await data.json();
-                 if (!negotiateProtocol.TryWebSockets) return reject({ code: ErrorCode.unsupportedWebsocket, message: null });
+                 if (!negotiateProtocol.TryWebSockets) reject({ code: ErrorCode.unsupportedWebsocket, message: null });
                  resolve(negotiateProtocol);
              } else if (data.status === 302 || data.status === 401 || data.status === 403) {
                  reject({ code: ErrorCode.unauthorized, message: null });
@@ -216,7 +228,7 @@ public _connect(protocol = 1.5): void {
        query.set("connectionToken", String(this.connection.token));
        query.set("tid", "10");
        const webSocket = new WS(`${url}/connect?${query.toString()}`, this.headers);
-       webSocket.onopen = (event: Event) => {
+       webSocket.onopen = () => {
            this._invocationId = 0;
            this._callTimeout = 0;
            this._start().then(() => {
@@ -236,7 +248,7 @@ public _connect(protocol = 1.5): void {
        webSocket.onmessage = (message: MessageEvent<unknown>) => {
            this._receiveMessage(message);
        }
-       webSocket.onclose = (event: CloseEvent) => {
+       webSocket.onclose = () => {
          this._callTimeout = 1000;
          if (this.connection) this.connection.state = ConnectionState.disconnected;
          this.post(["disconnected", "failed"]);
@@ -322,6 +334,8 @@ public _start(protocol = 1.5): Promise<unknown> {
        query.set("clientProtocol", String(protocol));
        query.set("transport", "webSockets");
        query.set("connectionToken", String(this.connection.token));
+       query.set("timeout", String(this.requestTimeout));
+       query.set("agent", String(this.agent));
        const url = `${this.url}/start?${query.toString()}`;
        return new Promise((resolve, reject) => {
          fetch(url, {
@@ -359,6 +373,8 @@ public _abort(protocol = 1.5): Promise<void> {
      query.set("clientProtocol", String(protocol));
      query.set("transport", "webSockets");
      query.set("connectionToken", String(this.connection.token));
+     query.set("timeout", String(this.requestTimeout));
+     query.set("agent", String(this.agent));
      const url = `${this.url}/abort?${query.toString()}`;
      return new Promise((resolve, reject) => {
        fetch(url, {

@@ -74,7 +74,7 @@ import { Client } from "./Client.ts";
             const invocationId = this.client._invocationId;
             const timeoutTimer = setTimeout(() => {
                 delete this.callbacks[invocationId];
-                return reject("Timeout");
+                reject("Timeout");
             }, this.client._callTimeout || this.client.callTimeout || 5000);
             this.callbacks[invocationId] = (error: string, result: string) => {
                 clearTimeout(timeoutTimer);
