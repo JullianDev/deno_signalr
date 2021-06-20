@@ -191,13 +191,5 @@ export interface ClientOptions {
     /**
      * The delay time for reconnecting in milliseconds
      */
-    reconnectDelayTime?: number,
-    /**
-     * The request timeout in milliseconds
-     */
-    requestTimeout?: number,
-    /**
-     * Set agent for HTTPS requests
-    */
-   agent?: boolean;
+    reconnectDelayTime?: number
 }

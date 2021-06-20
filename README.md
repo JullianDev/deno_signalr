@@ -47,9 +47,7 @@ const MyClient = new SignalR.Client("https://localhost:8080/signalr", [ "MyTestH
         MyOptionalHeader: "MyOptionalHeaderValue"
     },
     callTimeout: 5000,
-    reconnectDelayTime: 5000,
-    requestTimeout: 5000,
-    agent: false
+    reconnectDelayTime: 5000
 });
 ```
 This will create a new SignalR client instance with the parameters given.
@@ -79,11 +77,7 @@ export interface ClientOptions {
     /**
      * The delay time for reconnecting in milliseconds
      */
-    reconnectDelayTime?: number,
-    /**
-     * The request timeout in milliseconds
-    */
-    requestTimeout?: number
+    reconnectDelayTime?: number
 }
 ```
 

@@ -28,11 +28,6 @@ export { to };
   */
  public headers: Record<string,  string> = {};
  /**
-  * Set agent for HTTPS requests
-  * @public
-  */
- public agent = false;
- /**
   * The delay time for reconnecting in milliseconds
   * @public
   */
@@ -42,11 +37,6 @@ export { to };
   * @public
   */
  public callTimeout = 5000;
- /**
-  * The request timeout in millisecnds
-  * @public
-  */
- public requestTimeout = 5000;
  /**
   * The call timeout
   * @public
@@ -127,8 +117,6 @@ export { to };
      if (options.headers) this.headers = options.headers;
      if (options.callTimeout) this.callTimeout = options.callTimeout;
      if (options.reconnectDelayTime) this.reconnectDelayTime = options.reconnectDelayTime;
-     if (options.requestTimeout) this.requestTimeout = options.requestTimeout;
-     if (options.agent) this.agent = options.agent;
    }
 }
 /**
@@ -189,8 +177,6 @@ public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
 
    query.set("connectionData", JSON.stringify(this._hubNames));
    query.set("clientProtocol", String(protocol));
-   query.set("timeout", String(this.requestTimeout));
-   query.set("agent", String(this.agent));
    const url = `${this.url}/negotiate?${query.toString()}`;
    return new Promise((resolve, reject) => {
      fetch(url, {
@@ -336,8 +322,6 @@ public _start(protocol = 1.5): Promise<unknown> {
        query.set("clientProtocol", String(protocol));
        query.set("transport", "webSockets");
        query.set("connectionToken", String(this.connection.token));
-       query.set("timeout", String(this.requestTimeout));
-       query.set("agent", String(this.agent));
        const url = `${this.url}/start?${query.toString()}`;
        return new Promise((resolve, reject) => {
          fetch(url, {
@@ -375,8 +359,6 @@ public _abort(protocol = 1.5): Promise<void> {
      query.set("clientProtocol", String(protocol));
      query.set("transport", "webSockets");
      query.set("connectionToken", String(this.connection.token));
-     query.set("timeout", String(this.requestTimeout));
-     query.set("agent", String(this.agent));
      const url = `${this.url}/abort?${query.toString()}`;
      return new Promise((resolve, reject) => {
        fetch(url, {
