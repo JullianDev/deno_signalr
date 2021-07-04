@@ -21,7 +21,7 @@ export { to };
   * The queries to add to the URL
   * @public
   */
- public query: Record<string, unknown> = {};
+ public query: Record<string, string> = {};
  /**
   * The headers for all requests
   * @public
@@ -164,20 +164,21 @@ public _sendMessage(hub: string, method: string, args: unknown): void {
      this._websocket.send(payload);
 }
 /**
-* Negotitate with the endpoint for a connection token
+* Negotiate with the endpoint for a connection token
 * @public
 * @param {number} [protocol=1.5]
 * @returns {Promise<Record<string, unknown>>}
 */
 public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
-   const query = new URLSearchParams();
-   for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
-   const headers = new Headers();
-   for (const [key, value] of Object.entries(this.headers)) headers.append(key, String(value));
+   const query = new URLSearchParams({
+       ...this.query,
+       connectionData: JSON.stringify(this._hubNames),
+       clientProtocol: String(protocol)
+   });
+   const headers = new Headers(this.headers);
 
-   query.set("connectionData", JSON.stringify(this._hubNames));
-   query.set("clientProtocol", String(protocol));
-   const url = `${this.url}/negotiate?${query.toString()}`;
+   const url = new URL(`${this.url}/negotiate`);
+   url.search = query.toString();
    return new Promise((resolve, reject) => {
      fetch(url, {
          method: "GET",
@@ -206,16 +207,18 @@ public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
 */
 public _connect(protocol = 1.5): void {
    if (this.url && this.connection) {
-       const url = this.url.replace(/^http/, "ws");
-       const query = new URLSearchParams();
-       for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
- 
-       query.set("connectionData", JSON.stringify(this._hubNames));
-       query.set("clientProtocol", String(protocol));
-       query.set("transport", "webSockets");
-       query.set("connectionToken", String(this.connection.token));
-       query.set("tid", "10");
-       const webSocket = new WS(`${url}/connect?${query.toString()}`, this.headers);
+       const url = new URL(`${this.url.replace(/^http/, "ws")}/connect`);
+       const query = new URLSearchParams({
+           ...this.query,
+           connectionData: JSON.stringify(this._hubNames),
+           clientProtocol: String(protocol),
+           transport: "webSockets",
+           connectionToken: String(this.connection.token),
+           tid: "10"
+       });
+       url.search = query.toString();
+
+       const webSocket = new WS(url.toString(), this.headers);
        webSocket.onopen = () => {
            this._invocationId = 0;
            this._callTimeout = 0;
@@ -313,16 +316,17 @@ public _markLastMessage(): void {
 */
 public _start(protocol = 1.5): Promise<unknown> {
    if (this.url && this.connection) {
-       const query = new URLSearchParams();
-       for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
-       const headers = new Headers();
-       for (const [key, value] of Object.entries(this.headers)) headers.append(key, String(value));
+       const query = new URLSearchParams({
+           ...this.query,
+           connectionData: JSON.stringify(this._hubNames),
+           clientProtocol: String(protocol),
+           transport: "webSockets",
+           connectionToken: String(this.connection.token)
+       });
+       const headers = new Headers(this.headers);
+       const url = new URL(`${this.url}/start`);
+       url.search = query.toString();
 
-       query.set("connectionData", JSON.stringify(this._hubNames));
-       query.set("clientProtocol", String(protocol));
-       query.set("transport", "webSockets");
-       query.set("connectionToken", String(this.connection.token));
-       const url = `${this.url}/start?${query.toString()}`;
        return new Promise((resolve, reject) => {
          fetch(url, {
              method: "GET",
@@ -350,16 +354,17 @@ public _start(protocol = 1.5): Promise<unknown> {
 */
 public _abort(protocol = 1.5): Promise<void> {
  if (this.url && this.connection) {
-     const query = new URLSearchParams();
-     for (const [key, value] of Object.entries(this.query)) query.append(key, String(value));
-     const headers = new Headers();
-     for (const [key, value] of Object.entries(this.headers)) headers.append(key, String(value));
-
-     query.set("connectionData", JSON.stringify(this._hubNames));
-     query.set("clientProtocol", String(protocol));
-     query.set("transport", "webSockets");
-     query.set("connectionToken", String(this.connection.token));
-     const url = `${this.url}/abort?${query.toString()}`;
+     const query = new URLSearchParams({
+         ...this.query,
+         connectionData: JSON.stringify(this._hubNames),
+         clientProtocol: String(protocol),
+         transport: "webSockets",
+         connectionToken: String(this.connection.token)
+     });
+     const headers = new Headers(this.headers);
+     const url = new URL(`${this.url}/abort`);
+     url.search = query.toString();
+     
      return new Promise((resolve, reject) => {
        fetch(url, {
            method: "POST",

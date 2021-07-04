@@ -179,7 +179,7 @@ export interface ClientOptions {
     /**
      * The query to add to the URL
      */
-    query?: Record<string, unknown>,
+    query?: Record<string, string>,
     /**
      * The headers for all requests
      */
