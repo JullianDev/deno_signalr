@@ -51,7 +51,7 @@ export { to };
   * The websocket connection
   * @public
   */
- public _websocket?: WS;
+ public _websocket?: WS | WebSocket;
  /**
   * The hub names to connect to
   * @public
@@ -102,6 +102,7 @@ export { to };
   * @constructor
   * @param url - URL to connect to
   * @param hubs - Hubs to connect to
+  * @param options - Client options
   */
  constructor(url: string, hubs: string[], options?: ClientOptions) {
    super();
@@ -218,7 +219,12 @@ public _connect(protocol = 1.5): void {
        });
        url.search = query.toString();
 
-       const webSocket = new WS(url.toString(), this.headers);
+       let webSocket: WS | WebSocket;
+       if ("Deno" in window) {
+           webSocket = new WS(url.toString(), this.headers)
+       } else {
+           webSocket = new WebSocket(url.toString());
+       }
        webSocket.onopen = () => {
            this._invocationId = 0;
            this._callTimeout = 0;
