@@ -181,7 +181,7 @@ public _negotiate(protocol = 1.5): Promise<Record<string, unknown>> {
    const url = new URL(`${this.url}/negotiate`);
    url.search = query.toString();
    return new Promise((resolve, reject) => {
-     fetch(url, {
+     fetch(url.toString(), {
          method: "GET",
          headers: headers
      }).catch((error: Error) =>
@@ -335,7 +335,7 @@ public _start(protocol = 1.5): Promise<unknown> {
        url.search = query.toString();
 
        return new Promise((resolve, reject) => {
-         fetch(url, {
+         fetch(url.toString(), {
              method: "GET",
              headers: headers
          }).catch((error: Error) =>
@@ -373,7 +373,7 @@ public _abort(protocol = 1.5): Promise<void> {
      url.search = query.toString();
      
      return new Promise((resolve, reject) => {
-       fetch(url, {
+       fetch(url.toString(), {
            method: "POST",
            headers: headers
        }).catch((error: Error) =>
