@@ -220,7 +220,8 @@ public _connect(protocol = 1.5): void {
        url.search = query.toString();
 
        let webSocket: WS | WebSocket;
-       if ("Deno" in window) {
+       // @ts-ignore: Ignore this line, in browser context it will be defined. In Deno, it will not be defined by default.
+       if (document === undefined) {
            webSocket = new WS(url.toString(), this.headers)
        } else {
            webSocket = new WebSocket(url.toString());
