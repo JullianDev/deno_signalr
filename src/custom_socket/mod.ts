@@ -2,14 +2,14 @@
 
 import { BufReader, BufWriter } from "https://deno.land/std@0.91.0/io/bufio.ts";
 import { handshake } from "https://deno.land/std@0.91.0/ws/mod.ts";
-import WS, { type WSOptions } from "./ws.ts";
+import WS from "./ws.ts";
 import { detectEnvironment } from "../utils/detectEnvironment.ts";
 
 /**
  * Creates a websocket connection with custom headers!
  *
  * @param url URL where the socket needs to be connected
- * @param options Extra options to send
+ * @param headers Headers to send
  * @example
  * const ws = createSocketConnection('url', {
  *     headers: {
@@ -19,10 +19,10 @@ import { detectEnvironment } from "../utils/detectEnvironment.ts";
  */
 export async function createSocketConnection(
   url: string,
-  options: WSOptions,
+  headers: Record<string, string> = {},
 ): Promise<WS | WebSocket> {
   if (detectEnvironment() === "Browser") return new WebSocket(url);
-  return new WS(await createConnection(url, options.headers));
+  return new WS(await createConnection(url, headers));
 }
 
 /**

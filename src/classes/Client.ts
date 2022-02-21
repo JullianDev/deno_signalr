@@ -1,6 +1,6 @@
 import { Evt, to } from "../../deps.ts";
-import { createSocketConnection } from "../custom_socket/mod.ts";
 import { Hub } from "./Hub.ts";
+import { createSocketConnection } from "../utils/createSocketConnection.ts";
 import type WS from "../custom_socket/ws.ts";
 
 /**

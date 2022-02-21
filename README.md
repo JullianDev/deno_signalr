@@ -28,9 +28,19 @@ A SignalR client for Deno
 - [Custom Socket](https://deno.land/x/custom_socket)
   - Used for custom headers on WebSockets
 
+# Node and Browser Compatibility
+
+This module is compatible with the browser, but not with Node.
+
+To use with Node:
+
+- Shim `https://deno.land/x/evt@v1.10.2/mod.ts` to use npm `evt` instead. (not
+  tested)
+- Shim `https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/WS.ts` to use npm `WS` instead. (not tested)
+
 # Documentation
 
-**NOTICE: This documentation is as of v0.3, usage may change drastically as it
+**NOTICE: This documentation is as of v0.4, usage may change drastically as it
 reaches v1**
 
 ## Importing
