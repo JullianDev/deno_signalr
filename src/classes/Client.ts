@@ -46,7 +46,7 @@ export interface StandardError {
 /**
  * SignalR connection information.
  */
-export interface Connection {
+export interface Connection<HubMessage extends [string, string, unknown, unknown[]]> {
   /**
    * The connection state
    */
@@ -54,7 +54,7 @@ export interface Connection {
   /**
    * The connection hub.
    */
-  hub: Hub;
+  hub: Hub<HubMessage>;
   /**
    * The date of the last message in milliseconds.
    */
@@ -109,20 +109,6 @@ export interface HubMessageData {
 }
 
 /**
- * Hub Message from the server.
- */
-export interface HubMessage {
-  /**
-   * The message type.
-   */
-  type: string;
-  /**
-   * The data sent.
-   */
-  data: string;
-}
-
-/**
  * The client options to include as additional options.
  */
 export interface ClientOptions {
@@ -148,7 +134,7 @@ export interface ClientOptions {
  * A SignalR client for Deno which supports ASP.net
  * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", StandardError ]>}
  */
-export class Client extends Evt<
+export class Client<HubMessage extends [string, string, unknown, unknown[]] = [string, string, unknown, unknown[]]> extends Evt<
   | ["connected", undefined]
   | ["disconnected", string]
   | ["reconnecting", number]
@@ -182,7 +168,7 @@ export class Client extends Evt<
   /**
    * The SignalR connection.
    */
-  public connection: Connection;
+  public connection: Connection<HubMessage>;
 
   /**
    * Whether it has ever been initialized.
@@ -250,7 +236,7 @@ export class Client extends Evt<
     this.url = url;
     this.connection = {
       state: ConnectionState.disconnected,
-      hub: new Hub(this),
+      hub: new Hub<HubMessage>(this),
       lastMessageAt: Date.now(),
     };
     this._hubNames = hubs;
@@ -444,7 +430,7 @@ export class Client extends Evt<
       const timeElapsed = new Date().getTime() - this.connection.lastMessageAt;
       if (timeElapsed > this._keepAliveTimeout) {
         this.connection.state = ConnectionState.disconnected;
-        this._error(ErrorCode.connectLost);
+        this._error(ErrorCode.connectLost).then();
       } else {
         this._beatTimer = setTimeout(() => {
           this._beat();

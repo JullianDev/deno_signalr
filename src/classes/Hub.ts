@@ -3,18 +3,18 @@ import { type Client } from "./Client.ts";
 /**
  * SignalR hub for connections.
  */
-export class Hub {
+export class Hub<Message extends [string, string, unknown, unknown[]] = [string, string, unknown, unknown[]]> {
   /**
    * SignalR client
    */
-  public client: Client;
+  public client: Client<Message>;
 
   /**
    * Hub message handlers.
    */
   public handlers: Record<
     string,
-    Record<string, (message: unknown) => void>
+    Record<string, (message: Message[2]) => void>
   > = {};
 
   /**
@@ -29,7 +29,7 @@ export class Hub {
    * Construct a SignalR hub.
    * @param client - The SignalR client for the hub to use.
    */
-  constructor(client: Client) {
+  constructor(client: Client<Message>) {
     this.client = client;
   }
 
@@ -55,9 +55,9 @@ export class Hub {
    * @param callback - Function to be called on callback.
    */
   public on(
-    hub: string,
-    method: string,
-    callback: (error?: string, result?: string) => unknown,
+    hub: Message[0],
+    method: Message[1],
+    callback: (message: Message[3]) => unknown,
   ): void {
     let handler: Record<string, unknown> = this.handlers[hub];
     if (!handler) handler = this.handlers[hub] = {};
@@ -81,9 +81,9 @@ export class Hub {
    * @param args - The arguments.
    */
   public call(
-    hub: string,
-    method: string,
-    args: unknown[],
+    hub: Message[0],
+    method: Message[1],
+    args: Message[3],
   ): Promise<unknown> {
     if (!this.client) throw new Error();
 
@@ -112,7 +112,7 @@ export class Hub {
    * @param method - The SignalR hub method.
    * @param args - The arguments.
    */
-  public invoke(hub: string, method: string, args: unknown[]): void {
+  public invoke(hub: string, method: string, args: Message[3]): void {
     const messages = this._processInvocationArgs(args);
     if (this.client) this.client._sendMessage(hub, method, messages);
   }

@@ -25,6 +25,8 @@ export function createSocketConnection(
   url: string,
   options: WSOptions,
 ): WS | WebSocket {
-  if (detectEnvironment() === "Browser") return new WebSocket(url);
+  const environment = detectEnvironment();
+  if (environment === "Browser" || environment === "Unknown") return new WebSocket(url);
+  // Shim this on Node
   return new WS(url, options);
 }
