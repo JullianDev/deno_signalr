@@ -130,6 +130,10 @@ export interface ClientOptions {
    * The delay time for reconnecting to the socket in milliseconds.
    */
   reconnectDelayTime?: number;
+  /**
+   * Whether to include credentials from `credentials: include` in Fetch.
+   */
+  includeCredentials?: boolean;
 }
 
 /**
@@ -153,6 +157,11 @@ export class Client<
    * The base URL of the client.
    */
   public url: string;
+
+  /**
+   * Whether to include credentials from `credentials: include` in Fetch.
+   */
+  public readonly includeCredentials?: boolean;
 
   /**
    * The query parameters to add to the URL for all requests.
@@ -256,6 +265,7 @@ export class Client<
       if (options.reconnectDelayTime) {
         this.reconnectDelayTime = options.reconnectDelayTime;
       }
+      if (options.includeCredentials) this.includeCredentials = options.includeCredentials;
     }
   }
 
@@ -322,15 +332,18 @@ export class Client<
     let data: Response;
 
     try {
-      data = await fetch(url.toString(), {
+      const options = {
         headers,
-      });
+      };
+      // @ts-ignore: Ignore in Node
+      if (this.includeCredentials) options.credentials = "include";
+      data = await fetch(url.toString(), options);
     } catch (err) {
       throw err;
     }
 
     if (data.ok) {
-      const negotiateProtocol = await data.json();
+      const negotiateProtocol = (await data.json()) as Record<string, unknown>;
       if (!negotiateProtocol.TryWebSockets) {
         throw { code: ErrorCode.unsupportedWebsocket, message: null };
       }
@@ -369,7 +382,7 @@ export class Client<
       this._invocationId = 0;
       this._callTimeout = 0;
       try {
-        await this._start();
+        await this._start(protocol);
         this._reconnectCount = 0;
         this.post(["connected", undefined]);
         if (this.connection) {
@@ -401,7 +414,7 @@ export class Client<
    * Attempt a reconnection to the websocket.
    * @param restart - Whether it should attempt completely reconnect.
    */
-  public _reconnect(restart = false): void {
+  public _reconnect(restart = false, protocol = 1.5): void {
     if (
       this._reconnectTimer ||
       (this.connection.state === ConnectionState.reconnecting)
@@ -415,8 +428,8 @@ export class Client<
       this._reconnectCount++;
       this.connection.state = ConnectionState.reconnecting;
       this.post(["reconnecting", this._reconnectCount]);
-      if (restart) this.start().then();
-      else this._connect().then();
+      if (restart) this.start(protocol).then();
+      else this._connect(protocol).then();
       this._reconnectTimer = undefined;
     }, this.reconnectDelayTime ?? 5000);
   }
@@ -483,10 +496,12 @@ export class Client<
 
     let data: Response;
     try {
-      data = await fetch(url.toString(), {
-        method: "GET",
-        headers: headers,
-      });
+      const options = {
+        headers,
+      };
+      // @ts-ignore: Ignore in Node
+      if (this.includeCredentials) options.credentials = "include";
+      data = await fetch(url.toString(), options);
     } catch (error) {
       throw { code: ErrorCode.startError, message: error };
     }
@@ -504,7 +519,6 @@ export class Client<
 
   /**
    * Abort the SignalR connection
-   * @public
    * @param protocol - The SignalR client protocol
    */
   public async _abort(protocol = 1.5): Promise<void> {
@@ -521,10 +535,13 @@ export class Client<
 
     let data: Response;
     try {
-      data = await fetch(url.toString(), {
+      const options = {
         method: "POST",
-        headers: headers,
-      });
+        headers,
+      };
+      // @ts-ignore: Ignore in Node
+      if (this.includeCredentials) options.credentials = "include";
+      data = await fetch(url.toString(), options);
     } catch (error) {
       throw { code: ErrorCode.abortError, message: error };
     }

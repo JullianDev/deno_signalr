@@ -1,4 +1,4 @@
-import WS from "../custom_socket/ws.ts";
+import type WS from "../custom_socket/ws.ts";
 import { detectEnvironment } from "./detectEnvironment.ts";
 
 /**
@@ -20,15 +20,15 @@ export interface WSOptions {
  *     }
  * })
  */
-
-export function createSocketConnection(
+export async function createSocketConnection(
   url: string,
   options: WSOptions,
-): WS | WebSocket {
+): Promise<WS | WebSocket> {
   const environment = detectEnvironment();
   if (environment === "Browser" || environment === "Unknown") {
     return new WebSocket(url);
   }
-  // Shim this on Node
+  const { default: WS } = await import("https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts"); // Shim this on Node
+
   return new WS(url, options);
 }
