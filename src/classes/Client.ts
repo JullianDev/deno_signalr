@@ -278,9 +278,8 @@ export class Client extends Evt<
             const hub = message.H;
             const handler = this.connection.hub.handlers[hub];
             if (handler && message.M) {
-              // @ts-ignore: Handlers should always be records unless modified code
               const method = handler[message.M];
-              if (method) method.call(this, message.A);
+              if (method) method(message.A);
             }
           }
         }

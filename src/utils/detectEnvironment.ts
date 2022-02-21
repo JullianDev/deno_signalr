@@ -4,8 +4,8 @@ type EnvironmentType = "NodeJS" | "Deno" | "Unknown" | "Browser";
  * Detect the current environment.
  */
 export function detectEnvironment(): EnvironmentType {
-  // @ts-ignore: Ignore these parts in TypeScript
   if (
+      // @ts-ignore: Ignore these parts in TypeScript
     "process" in globalThis && process.release.name.search(/node|io.js/) !== -1
   ) {
     return "NodeJS";

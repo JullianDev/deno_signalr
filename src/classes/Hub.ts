@@ -14,7 +14,7 @@ export class Hub {
    */
   public handlers: Record<
     string,
-    Record<string, (error?: unknown, result?: unknown) => void>
+    Record<string, (message: unknown) => void>
   > = {};
 
   /**

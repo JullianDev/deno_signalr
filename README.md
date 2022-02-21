@@ -36,7 +36,8 @@ To use with Node:
 
 - Shim `https://deno.land/x/evt@v1.10.2/mod.ts` to use npm `evt` instead. (not
   tested)
-- Shim `https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/WS.ts` to use npm `WS` instead. (not tested)
+- Shim `https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/WS.ts` to use
+  npm `WS` instead. (not tested)
 
 # Documentation
 
