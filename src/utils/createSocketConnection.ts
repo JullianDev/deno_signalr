@@ -30,5 +30,6 @@ export async function createSocketConnection(
   }
   const { default: WS } = await import("https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts"); // Shim this on Node
 
+  // @ts-ignore: You are fine. Stop worrying.
   return new WS(url, options);
 }
