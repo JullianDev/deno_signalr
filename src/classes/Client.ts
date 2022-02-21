@@ -302,7 +302,7 @@ export class Client<
    * @param method = THe method to send with the data.
    * @param args - Arguments to send.
    */
-  public _sendMessage(hub: string, method: string, args: unknown): void {
+  public _sendMessage(hub: HubMessage[0], method: HubMessage[1], args: unknown): void {
     const payload = JSON.stringify({
       H: hub,
       M: method,
