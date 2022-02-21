@@ -3,7 +3,14 @@ import { type Client } from "./Client.ts";
 /**
  * SignalR hub for connections.
  */
-export class Hub<Message extends [string, string, unknown, unknown[]] = [string, string, unknown, unknown[]]> {
+export class Hub<
+  Message extends [string, string, unknown, unknown[]] = [
+    string,
+    string,
+    unknown,
+    unknown[],
+  ],
+> {
   /**
    * SignalR client
    */

@@ -46,7 +46,9 @@ export interface StandardError {
 /**
  * SignalR connection information.
  */
-export interface Connection<HubMessage extends [string, string, unknown, unknown[]]> {
+export interface Connection<
+  HubMessage extends [string, string, unknown, unknown[]],
+> {
   /**
    * The connection state
    */
@@ -134,7 +136,14 @@ export interface ClientOptions {
  * A SignalR client for Deno which supports ASP.net
  * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", StandardError ]>}
  */
-export class Client<HubMessage extends [string, string, unknown, unknown[]] = [string, string, unknown, unknown[]]> extends Evt<
+export class Client<
+  HubMessage extends [string, string, unknown, unknown[]] = [
+    string,
+    string,
+    unknown,
+    unknown[],
+  ],
+> extends Evt<
   | ["connected", undefined]
   | ["disconnected", string]
   | ["reconnecting", number]
