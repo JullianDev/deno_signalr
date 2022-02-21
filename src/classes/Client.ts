@@ -493,14 +493,14 @@ export class Client extends Evt<
         method: "GET",
         headers: headers,
       });
-    } catch(error) {
+    } catch (error) {
       throw { code: ErrorCode.startError, message: error };
     }
 
     if (data.ok) {
       return await data.json();
     } else if (
-        data.status === 302 || data.status === 401 || data.status === 403
+      data.status === 302 || data.status === 401 || data.status === 403
     ) {
       throw { code: ErrorCode.unauthorized, message: null };
     } else {
@@ -530,18 +530,18 @@ export class Client extends Evt<
       data = await fetch(url.toString(), {
         method: "POST",
         headers: headers,
-      })
-    } catch(error) {
+      });
+    } catch (error) {
       throw { code: ErrorCode.abortError, message: error };
     }
 
     if (!data.ok) {
       if (
-          data.status === 302 || data.status === 401 || data.status === 403
+        data.status === 302 || data.status === 401 || data.status === 403
       ) {
-        throw {code: ErrorCode.unauthorized, message: null};
+        throw { code: ErrorCode.unauthorized, message: null };
       } else {
-        throw {code: ErrorCode.abortError, message: data.status};
+        throw { code: ErrorCode.abortError, message: data.status };
       }
     }
   }
@@ -599,15 +599,15 @@ export class Client extends Evt<
     try {
       const negotiateProtocol = await this._negotiate(protocol);
       if (
-          typeof negotiateProtocol.ConnectionToken === "string" &&
-          typeof negotiateProtocol.ConnectionId === "string"
+        typeof negotiateProtocol.ConnectionToken === "string" &&
+        typeof negotiateProtocol.ConnectionId === "string"
       ) {
         this.connection.token = negotiateProtocol.ConnectionToken;
         this.connection.id = negotiateProtocol.ConnectionId;
       }
       if (
-          negotiateProtocol.KeepAliveTimeout &&
-          typeof negotiateProtocol.KeepAliveTimeout === "number"
+        negotiateProtocol.KeepAliveTimeout &&
+        typeof negotiateProtocol.KeepAliveTimeout === "number"
       ) {
         this._keepAlive = true;
         this._keepAliveTimeout = negotiateProtocol.KeepAliveTimeout * 1000;
@@ -616,7 +616,7 @@ export class Client extends Evt<
         this._keepAlive = false;
       }
       await this._connect(protocol);
-    } catch(error) {
+    } catch (error) {
       this.connection.state = ConnectionState.disconnected;
       await this._error(error.code, error.message);
     }
