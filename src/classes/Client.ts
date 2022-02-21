@@ -1,7 +1,7 @@
 import { Evt, to } from "../../deps.ts";
 import { Hub } from "./Hub.ts";
 import { createSocketConnection } from "../utils/createSocketConnection.ts";
-import type WS from "../custom_socket/ws.ts";
+import type WS from "https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts";
 
 /**
  * SignalR connection state.
@@ -413,6 +413,7 @@ export class Client<
   /**
    * Attempt a reconnection to the websocket.
    * @param restart - Whether it should attempt completely reconnect.
+   * @param protocol - The SignalR protocol version.
    */
   public _reconnect(restart = false, protocol = 1.5): void {
     if (
