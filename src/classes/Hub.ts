@@ -75,7 +75,7 @@ export class Hub<
    * Process invocation arguments.
    * @param args - The invocation args.
    */
-  public _processInvocationArgs(args: unknown[]): unknown[] {
+  public _processInvocationArgs(args: Message[3]): Message[3] {
     return args.map((arg) =>
       (typeof arg === "function" || typeof arg === "undefined") ? null : arg
     );
