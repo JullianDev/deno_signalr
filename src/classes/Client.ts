@@ -192,7 +192,7 @@ export class Client<
   /**
    * The hub(s) to connect to.
    */
-  public _hubNames: string[] | unknown[];
+  public _hubNames: HubMessage[0][] | unknown[];
 
   /**
    * The latest invocation ID.
@@ -240,7 +240,7 @@ export class Client<
    * @param hubs - Hubs to connect to.
    * @param options - Other client options.
    */
-  constructor(url: string, hubs: string[], options?: ClientOptions) {
+  constructor(url: string, hubs: HubMessage[0][], options?: ClientOptions) {
     super();
     this.url = url;
     this.connection = {
