@@ -623,7 +623,7 @@ export class Client extends Evt<
   }
 
   /**
-   * End the SignalR connection
+   * End the SignalR connection.
    */
   public end() {
     if (this._websocket) {

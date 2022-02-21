@@ -70,19 +70,19 @@ The ClientOptions interface is the following:
 ```typescript
 export interface ClientOptions {
   /**
-   * The queries to add to the URL
+   * The query parameters to add to the URL for all requests.
    */
-  query?: Record<string, unknown>;
+  query?: Record<string, string>;
   /**
-   * The headers for all requests
+   * The headers for all requests.
    */
   headers?: Record<string, string>;
   /**
-   * The timeout for calls in milliseconds
+   * The timeout for calls in milliseconds.
    */
   callTimeout?: number;
   /**
-   * The delay time for reconnecting in milliseconds
+   * The delay time for reconnecting to the socket in milliseconds.
    */
   reconnectDelayTime?: number;
 }
@@ -178,7 +178,7 @@ MyClient.start();
 
 This will negotiate, start and connect with the hubs.
 
-`void Client.start(number protocol = 1.5)`
+`Promise<void> Client.start(number protocol = 1.5)`
 
 ## Ending the connection
 
