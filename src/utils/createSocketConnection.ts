@@ -32,3 +32,5 @@ export async function createSocketConnection(
 
   return new WS(url, options);
 }
+
+export { type WS };

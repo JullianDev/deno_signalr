@@ -1,7 +1,6 @@
 import { Evt, to } from "../../deps.ts";
 import { Hub } from "./Hub.ts";
-import { createSocketConnection } from "../utils/createSocketConnection.ts";
-import type WS from "https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts";
+import { createSocketConnection, type WS } from "../utils/createSocketConnection.ts";
 
 /**
  * SignalR connection state.
@@ -47,7 +46,7 @@ export interface StandardError {
  * SignalR connection information.
  */
 export interface Connection<
-  HubMessage extends [string, string, unknown, unknown[]],
+  HubMessage extends [string, string, unknown[], unknown[]],
 > {
   /**
    * The connection state
@@ -85,7 +84,7 @@ export interface Message {
   /**
    * The message's arguments.
    */
-  A?: unknown;
+  A?: unknown[];
 }
 
 /**
@@ -141,10 +140,10 @@ export interface ClientOptions {
  * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", StandardError ]>}
  */
 export class Client<
-  HubMessage extends [string, string, unknown, unknown[]] = [
+  HubMessage extends [string, string, unknown[], unknown[]] = [
     string,
     string,
-    unknown,
+    unknown[],
     unknown[],
   ],
 > extends Evt<
@@ -284,7 +283,7 @@ export class Client<
             const handler = this.connection.hub.handlers[hub];
             if (handler && message.M) {
               const method = handler[message.M];
-              if (method) method(message.A);
+              if (method) method(message.A!);
             }
           }
         }
@@ -395,11 +394,11 @@ export class Client<
         await this._error(error.code, error.message);
       }
     };
-    webSocket.onerror = (event: Event | ErrorEvent) => {
-      if ("error" in event) this._error(ErrorCode.socketError, event.error);
-    };
     webSocket.onmessage = (message: MessageEvent<unknown>) => {
       this._receiveMessage(message);
+    };
+    webSocket.onerror = (event: Event | ErrorEvent) => {
+      if ("error" in event) this._error(ErrorCode.socketError, event.error);
     };
     webSocket.onclose = () => {
       this._callTimeout = 1000;
