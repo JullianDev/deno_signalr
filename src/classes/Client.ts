@@ -321,8 +321,8 @@ export class Client<
    */
   public _sendMessage(
     hub: HubMessage[0],
-    method: HubMessage[1],
-    args: HubMessage[3],
+    method: Extract<HubMessage, [typeof hub, unknown, unknown, unknown]>[1],
+    args: Extract<HubMessage, [typeof hub, typeof method, unknown, unknown]>[3],
   ): void {
     const payload = JSON.stringify({
       H: hub,
@@ -333,7 +333,11 @@ export class Client<
     this._invocationId++;
     if (this._websocket && (this._websocket.readyState === WebSocket.OPEN)) {
       this._websocket.send(payload);
-    } else throw new TypeError("WebSocket readyState must be OPEN to send messages.");
+    } else {
+      throw new TypeError(
+        "WebSocket readyState must be OPEN to send messages.",
+      );
+    }
   }
 
   /**

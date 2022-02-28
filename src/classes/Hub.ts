@@ -63,8 +63,13 @@ export class Hub<
    */
   public on(
     hub: Message[0],
-    method: Message[1],
-    callback: (message: Message[2]) => unknown,
+    method: Extract<Message, [typeof hub, unknown, unknown, unknown]>[1],
+    callback: (
+      message: Extract<
+        Message,
+        [typeof hub, typeof method, unknown, unknown]
+      >[2],
+    ) => unknown,
   ): void {
     let handler: Record<string, unknown> = this.handlers[hub];
     if (!handler) handler = this.handlers[hub] = {};
@@ -89,8 +94,8 @@ export class Hub<
    */
   public call(
     hub: Message[0],
-    method: Message[1],
-    args: Message[3],
+    method: Extract<Message, [typeof hub, unknown, unknown, unknown]>[1],
+    args: Extract<Message, [typeof hub, typeof method, unknown, unknown]>[3],
   ): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const messages = this._processInvocationArgs(args);
@@ -118,7 +123,11 @@ export class Hub<
    * @param method - The SignalR hub method.
    * @param args - The arguments.
    */
-  public invoke(hub: Message[0], method: Message[1], args: Message[3]): void {
+  public invoke(
+    hub: Message[0],
+    method: Extract<Message, [typeof hub, unknown, unknown, unknown]>[1],
+    args: Extract<Message, [typeof hub, typeof method, unknown, unknown]>[3],
+  ): void {
     const messages = this._processInvocationArgs(args);
     if (this.client) this.client._sendMessage(hub, method, messages);
   }
