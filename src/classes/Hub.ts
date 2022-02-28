@@ -61,13 +61,16 @@ export class Hub<
    * @param method - The method name.
    * @param callback - Function to be called on callback.
    */
-  public on(
-    hub: Message[0],
-    method: Extract<Message, [typeof hub, unknown, unknown, unknown]>[1],
+  public on<
+    Hub extends Message[0],
+    Method extends Extract<Message, [Hub, unknown, unknown, unknown]>[1],
+  >(
+    hub: Hub,
+    method: Method,
     callback: (
       message: Extract<
         Message,
-        [typeof hub, typeof method, unknown, unknown]
+        [Hub, Method, unknown, unknown]
       >[2],
     ) => unknown,
   ): void {
@@ -92,10 +95,13 @@ export class Hub<
    * @param method - The SignalR hub method.
    * @param args - The arguments.
    */
-  public call(
-    hub: Message[0],
-    method: Extract<Message, [typeof hub, unknown, unknown, unknown]>[1],
-    args: Extract<Message, [typeof hub, typeof method, unknown, unknown]>[3],
+  public call<
+    Hub extends Message[0],
+    Method extends Extract<Message, [Hub, unknown, unknown, unknown]>[1],
+  >(
+    hub: Hub,
+    method: Method,
+    args: Extract<Message, [Hub, Method, unknown, unknown]>[3],
   ): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const messages = this._processInvocationArgs(args);
@@ -123,10 +129,13 @@ export class Hub<
    * @param method - The SignalR hub method.
    * @param args - The arguments.
    */
-  public invoke(
-    hub: Message[0],
-    method: Extract<Message, [typeof hub, unknown, unknown, unknown]>[1],
-    args: Extract<Message, [typeof hub, typeof method, unknown, unknown]>[3],
+  public invoke<
+    Hub extends Message[0],
+    Method extends Extract<Message, [Hub, unknown, unknown, unknown]>[0],
+  >(
+    hub: Hub,
+    method: Method,
+    args: Extract<Message, [Hub, Method, unknown, unknown]>[3],
   ): void {
     const messages = this._processInvocationArgs(args);
     if (this.client) this.client._sendMessage(hub, method, messages);

@@ -319,10 +319,13 @@ export class Client<
    * @param method = THe method to send with the data.
    * @param args - Arguments to send.
    */
-  public _sendMessage(
+  public _sendMessage<
+    Hub extends HubMessage[0],
+    Method extends Extract<HubMessage, [Hub, unknown, unknown, unknown]>[1],
+  >(
     hub: HubMessage[0],
-    method: Extract<HubMessage, [typeof hub, unknown, unknown, unknown]>[1],
-    args: Extract<HubMessage, [typeof hub, typeof method, unknown, unknown]>[3],
+    method: Method,
+    args: Extract<HubMessage, [Hub, Method, unknown, unknown]>[3],
   ): void {
     const payload = JSON.stringify({
       H: hub,
