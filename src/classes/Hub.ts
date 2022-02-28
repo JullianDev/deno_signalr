@@ -92,8 +92,6 @@ export class Hub<
     method: Message[1],
     args: Message[3],
   ): Promise<unknown> {
-    if (!this.client) throw new Error();
-
     const messages = this._processInvocationArgs(args);
     const invocationId = this.client._invocationId;
     const timeoutTimer = setTimeout(() => {

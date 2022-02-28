@@ -1,6 +1,9 @@
 import { Evt, to } from "../../deps.ts";
 import { Hub } from "./Hub.ts";
-import { createSocketConnection, type WS } from "../utils/createSocketConnection.ts";
+import {
+  createSocketConnection,
+  type WS,
+} from "../utils/createSocketConnection.ts";
 
 /**
  * SignalR connection state.
@@ -136,6 +139,19 @@ export interface ClientOptions {
 }
 
 /**
+ * SignalR connection errors.
+ */
+export class SignalRHubError extends Error {
+  public code: ErrorCode;
+  public errorMessage: unknown | null;
+  constructor(message: string, code: ErrorCode, errorMessage: unknown | null) {
+    super(message);
+    this.code = code;
+    this.errorMessage = errorMessage;
+  }
+}
+
+/**
  * A SignalR client for Deno which supports ASP.net
  * @extends {Evt<[ "connected", undefined ] | [ "disconnected", string ] | [ "reconnecting", number ] | [ "error", StandardError ]>}
  */
@@ -264,7 +280,9 @@ export class Client<
       if (options.reconnectDelayTime) {
         this.reconnectDelayTime = options.reconnectDelayTime;
       }
-      if (options.includeCredentials) this.includeCredentials = options.includeCredentials;
+      if (options.includeCredentials) {
+        this.includeCredentials = options.includeCredentials;
+      }
     }
   }
 
@@ -301,7 +319,11 @@ export class Client<
    * @param method = THe method to send with the data.
    * @param args - Arguments to send.
    */
-  public _sendMessage(hub: HubMessage[0], method: HubMessage[1], args: HubMessage[3]): void {
+  public _sendMessage(
+    hub: HubMessage[0],
+    method: HubMessage[1],
+    args: HubMessage[3],
+  ): void {
     const payload = JSON.stringify({
       H: hub,
       M: method,
@@ -311,7 +333,7 @@ export class Client<
     this._invocationId++;
     if (this._websocket && (this._websocket.readyState === WebSocket.OPEN)) {
       this._websocket.send(payload);
-    }
+    } else throw new TypeError("WebSocket readyState must be OPEN to send messages.");
   }
 
   /**
@@ -344,16 +366,28 @@ export class Client<
     if (data.ok) {
       const negotiateProtocol = (await data.json()) as Record<string, unknown>;
       if (!negotiateProtocol.TryWebSockets) {
-        throw { code: ErrorCode.unsupportedWebsocket, message: null };
+        throw new SignalRHubError(
+          ErrorCode.unsupportedWebsocket,
+          ErrorCode.unsupportedWebsocket,
+          null,
+        );
       }
 
       return negotiateProtocol;
     } else if (
       data.status === 302 || data.status === 401 || data.status === 403
     ) {
-      throw { code: ErrorCode.unauthorized, message: null };
+      throw new SignalRHubError(
+        ErrorCode.unauthorized,
+        ErrorCode.unauthorized,
+        null,
+      );
     } else {
-      throw { code: ErrorCode.negotiateError, message: data.status };
+      throw new SignalRHubError(
+        ErrorCode.negotiateError,
+        ErrorCode.negotiateError,
+        data.status,
+      );
     }
   }
 
@@ -503,7 +537,11 @@ export class Client<
       if (this.includeCredentials) options.credentials = "include";
       data = await fetch(url.toString(), options);
     } catch (error) {
-      throw { code: ErrorCode.startError, message: error };
+      throw new SignalRHubError(
+        ErrorCode.startError,
+        ErrorCode.startError,
+        error,
+      );
     }
 
     if (data.ok) {
@@ -511,9 +549,17 @@ export class Client<
     } else if (
       data.status === 302 || data.status === 401 || data.status === 403
     ) {
-      throw { code: ErrorCode.unauthorized, message: null };
+      throw new SignalRHubError(
+        ErrorCode.unauthorized,
+        ErrorCode.unauthorized,
+        null,
+      );
     } else {
-      throw { code: ErrorCode.startError, message: data.status };
+      throw new SignalRHubError(
+        ErrorCode.startError,
+        ErrorCode.startError,
+        data.status,
+      );
     }
   }
 
@@ -543,16 +589,28 @@ export class Client<
       if (this.includeCredentials) options.credentials = "include";
       data = await fetch(url.toString(), options);
     } catch (error) {
-      throw { code: ErrorCode.abortError, message: error };
+      throw new SignalRHubError(
+        ErrorCode.abortError,
+        ErrorCode.abortError,
+        error,
+      );
     }
 
     if (!data.ok) {
       if (
         data.status === 302 || data.status === 401 || data.status === 403
       ) {
-        throw { code: ErrorCode.unauthorized, message: null };
+        throw new SignalRHubError(
+          ErrorCode.unauthorized,
+          ErrorCode.unauthorized,
+          null,
+        );
       } else {
-        throw { code: ErrorCode.abortError, message: data.status };
+        throw new SignalRHubError(
+          ErrorCode.abortError,
+          ErrorCode.abortError,
+          data.status,
+        );
       }
     }
   }

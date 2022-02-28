@@ -28,7 +28,9 @@ export async function createSocketConnection(
   if (environment === "Browser" || environment === "Unknown") {
     return new WebSocket(url);
   }
-  const { default: WS } = await import("https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts"); // Map this to WS on Node
+  const { default: WS } = await import(
+    "https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts"
+  ); // Map this to WS on Node
 
   return new WS(url, options);
 }
