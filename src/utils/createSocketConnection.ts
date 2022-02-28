@@ -1,5 +1,5 @@
 import { detectEnvironment } from "./detectEnvironment.ts";
-import type WS from "https://deno.land/x/deno_signalr@v0.4.0/src/custom_socket/ws.ts";
+import type WS from "https://deno.land/x/deno_signalr@v0.4.6/src/custom_socket/ws.ts";
 
 /**
  * Custom websocket options. Made to match with Node WS.
@@ -29,7 +29,7 @@ export async function createSocketConnection(
     return new WebSocket(url);
   }
   const { default: WS } = await import(
-    "https://deno.land/x/deno_signalr@v0.4.4/src/custom_socket/ws.ts"
+    "https://deno.land/x/deno_signalr@v0.4.6/src/custom_socket/ws.ts"
   ); // Map this to WS on Node
 
   return new WS(url, options);
