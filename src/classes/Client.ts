@@ -334,7 +334,7 @@ export class Client<
       I: this._invocationId,
     });
     this._invocationId++;
-    if (this._websocket && (this._websocket.readyState === WebSocket.OPEN)) {
+    if (this._websocket && (this._websocket.readyState === 1)) {
       this._websocket.send(payload);
     } else {
       throw new TypeError(
