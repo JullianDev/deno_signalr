@@ -92,12 +92,13 @@ export class Hub<
     method: Message[1],
     args: Message[3],
   ): Promise<unknown> {
-    const messages = this._processInvocationArgs(args);
-    const invocationId = this.client._invocationId;
-    const timeoutTimer = setTimeout(() => {
-      delete this.callbacks[invocationId];
-    }, this.client._callTimeout ?? this.client.callTimeout ?? 5000);
     return new Promise((resolve, reject) => {
+      const messages = this._processInvocationArgs(args);
+      const invocationId = this.client._invocationId;
+      const timeoutTimer = setTimeout(() => {
+        delete this.callbacks[invocationId];
+        reject(new Error("Timeout"));
+      }, this.client._callTimeout || this.client.callTimeout || 5000);
       this.callbacks[invocationId] = (
         error?: string,
         result?: string | boolean,
