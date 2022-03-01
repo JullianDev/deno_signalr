@@ -19,10 +19,7 @@ export class Hub<
   /**
    * Hub message handlers.
    */
-  public handlers: Record<
-    string,
-    Record<string, (message: Message[2]) => void>
-  > = {};
+  public handlers: [string, string, (message: Message[2]) => void][] = [];
 
   /**
    * Hub message callbacks.
@@ -74,9 +71,7 @@ export class Hub<
       >[2],
     ) => unknown,
   ): void {
-    let handler: Record<string, unknown> = this.handlers[hub];
-    if (!handler) handler = this.handlers[hub] = {};
-    handler[method] = callback;
+    this.handlers.push([hub, method, callback]);
   }
 
   /**

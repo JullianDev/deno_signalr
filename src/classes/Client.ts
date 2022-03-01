@@ -297,11 +297,10 @@ export class Client<
       if (data.M) {
         for (const message of data.M) {
           if (this.connection && message.H) {
-            const hub = message.H;
-            const handler = this.connection.hub.handlers[hub];
-            if (handler && message.M) {
-              const method = handler[message.M];
-              if (method) method(message.A!);
+            if (message.M) {
+              const handlers = this.connection.hub.handlers.filter(([hub, method]) => (message.H === hub) && (message.M === method));
+
+              handlers.forEach(([_hub, _message, callback]) => callback(message.A!));
             }
           }
         }
