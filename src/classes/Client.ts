@@ -296,12 +296,14 @@ export class Client<
       const data: HubMessageData = JSON.parse(message.data);
       if (data.M) {
         for (const message of data.M) {
-          if (this.connection && message.H) {
-            if (message.M) {
-              const handlers = this.connection.hub.handlers.filter(([hub, method]) => (message.H === hub) && (message.M === method));
+          if (this.connection && message.H && message.M) {
+              this.connection.hub.handlers
+                .filter(([hub, method]) => (message.H === hub) && (message.M === method))
+                .forEach(([_hub, _method, callback]) => callback(message.A!));
 
-              handlers.forEach(([_hub, _message, callback]) => callback(message.A!));
-            }
+              this.connection.hub.anyHandlers
+                .filter(([hub]) => message.H === hub)
+                .forEach(([_hub, callback]) => callback(message.M!, message.A!))
           }
         }
       } else if (data.I) {

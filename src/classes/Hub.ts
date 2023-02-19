@@ -17,9 +17,14 @@ export class Hub<
   public client: Client<Message>;
 
   /**
-   * Hub message handlers.
+   * Hub method message handlers.
    */
   public handlers: [string, string, (message: Message[2]) => void][] = [];
+
+  /**
+   * Hub any method message handlers.
+   */
+  public anyHandlers: [string, (method: Message[1], message: Message[2]) => void][] = [];
 
   /**
    * Hub message callbacks.
@@ -53,7 +58,7 @@ export class Hub<
   }
 
   /**
-   * Bind events that will receive messages.
+   * Bind events that will receive messages from a specifci hub.
    * @param hub - The hub name.
    * @param method - The method name.
    * @param callback - Function to be called on callback.
@@ -73,6 +78,28 @@ export class Hub<
   ): void {
     this.handlers.push([hub, method, callback]);
   }
+
+  /**
+   * Bind events that will receive messages.
+   * @param method - The method name.
+   * @param callback - Function to be called on callback.
+   */
+    public onAny<
+    Hub extends Message[0],
+    Method extends Extract<Message, [Hub, unknown, unknown, unknown]>[1],
+  >(
+    hub: Hub,
+    callback: (
+      method: Extract<Message, [Hub, unknown, unknown, unknown]>[1],
+      message: Extract<
+        Message,
+        [Hub, Method, unknown, unknown]
+      >[2],
+    ) => unknown,
+  ): void {
+    this.anyHandlers.push([hub, callback]);
+  }
+
 
   /**
    * Process invocation arguments.

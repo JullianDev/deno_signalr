@@ -15,7 +15,6 @@ A SignalR client for Deno
 
 - [node-signalr](https://github.com/alex8088/node-signalr) - (Original) by
   [alex.wei](https://github.com/alex8088)
-- [Julli4n](https://github.com/Julli4n) - Ported the original
 
 ## License
 
