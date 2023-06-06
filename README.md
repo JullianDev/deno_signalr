@@ -1,3 +1,6 @@
+> **Warning**
+> Deprecated. This module was made solely for interacting with Roblox's SignalR endpoints, they have since migrated to ASP.NET Core SignalR.
+
 a Deno port of [node-signalr](https://github.com/alex8088/node-signalr)
 
 # deno-signalr
